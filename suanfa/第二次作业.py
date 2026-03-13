@@ -34,27 +34,47 @@ if __name__ == "__main__":
     my_set.delete(2)
     print(my_set)  # 输出: [1, 3]
     print(my_set.query(2))  # 输出: False
-def insert_into_sorted_array(arr, value):
-    """
-    将 value 插入有序数组 arr，保持升序，假设 arr 无重复
-    返回插入后的新数组
-    """
-    if value>arr[len(arr)-1]:
-        arr.append(value)
-        return arr
-    if value<arr[0]:
-        arr.insert(0, value)
-        return arr
-    # 找到第一个大于等于 value 的位置
-    i = 0
-    while i < len(arr) and arr[i] < value:
-        i += 1
-    # 插入
-    arr.insert(i, value)
-    return arr
+class SimpleOrderedSet:
+    """一个简单的有序集合类，支持插入和显示操作"""
+    def __init__(self):
+        self.data = [0] * 100  # 假设最大容量为100
+        self.size = 0
+    def insert(self, x):
+        """将x插入有序集合（保持升序）"""
+      
+        
+        # 检查是否重复
+        for i in range(self.size):
+            if self.data[i] == x:
+                print(f"{x} 已存在")
+                return False
+        
+        #  找到插入位置
+        pos = self.size  # 默认插到最后
+        for i in range(self.size):
+            if self.data[i] > x:
+                pos = i
+                break
+        
+        #从后往前移动元素
+        
+        for i in range(self.size, pos, -1):
+            self.data[i] = self.data[i-1]
+        
+        # 插入新元素
+        self.data[pos] = x
+        self.size += 1
+        
+        print(f"插入 {x} 成功")
+        return True
+    
+    def show(self):
+        """显示集合"""
+        print(self.data[:self.size])
 # 测试代码
 if __name__ == "__main__":
-    arr = [1, 3, 5, 7]
-    print(insert_into_sorted_array(arr, 4))  # 输出: [1, 3, 4, 5, 7]
-    print(insert_into_sorted_array(arr, 0))  # 输出: [0, 1, 3, 4, 5, 7]
-    print(insert_into_sorted_array(arr, 8))  # 输出: [0, 1, 3, 4, 5, 7, 8]
+    ordered_set = SimpleOrderedSet()
+    ordered_set.insert(5)
+    ordered_set.insert(3)
+    ordered_set.insert(8)
+    ordered_set.show()  # 输出: [3, 5, 8]
