@@ -1,0 +1,9 @@
+3、10
+shell命令行解释器
+terminal终端
+/斜杠
+\反斜杠 转义
+root
+sudo临时高权限 rm -rf / *
+shell：bash fish
+三次握手，四次挥手
