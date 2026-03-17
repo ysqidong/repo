@@ -1,0 +1,33 @@
+from collection.abc import sequence
+ctrl c 终止命令ctrl shift c复制
+ctrl d 退出终端
+ctrl l清屏
+a跳到行首e跳到行尾
+z暂停
+Ctrl + U：在终端中，剪切光标之前的所有内容
+w删一个词
+cd..上级目录
+cd~家目录
+/根目录
+-上一级目录
+空格分隔指令
+注意大小写，‘“
+#注释
+Tab补全
+ls list
+-a 显示包括隐藏
+-h人性化显示
+-R递归显示
+-l长格式 
+mkdir创建路径
+mldir dir1 dir2 dir3
+-p递归创建
+./当前路径  我在那
+~/家路径 普通用户 /home/xxx  root /root  我是谁
+echo回声
+-e识别转义符
+-E不自动识别转义符
+-n不添加换行符
+touch创建文件 更新时间戳
+-c只更新时间戳
+-d指定时间
