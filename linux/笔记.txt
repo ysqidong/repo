@@ -31,3 +31,38 @@ echo回声
 touch创建文件 更新时间戳
 -c只更新时间戳
 -d指定时间
+
+head开头
+ tail结尾
+head -n指定行数
+
+mv 移动，重命名
+-i有提示覆盖
+-f强制覆盖
+-n不覆盖
+-v详细显示
+
+cp copy
+cp -r递归粘贴 （路径）
+
+rwx 阅读写执行 八进制 分三组
+chmod修改权限
+-u所有者
+-g所属组
++-=
+chmod 777 file.txt
+生成公钥私钥ssh-keygen
+id_rsa -》 私钥
+id_rsa.pub
+
+sha256
+wget下载
+curl -O本地 -L重定向
+
+find查找 -type
+0标准输入
+1标准输出
+2标准错误
+find / -name "*.py" > 1.txt 2>&1查找全系统的Python文件，并将结果（包括错误）保存到 1.txt 中
+
+alias化名
