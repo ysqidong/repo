@@ -66,3 +66,20 @@ find查找 -type
 find / -name "*.py" > 1.txt 2>&1查找全系统的Python文件，并将结果（包括错误）保存到 1.txt 中
 
 alias化名
+.bashrc  .隐藏  登录式配置文档
+.bash_profile非登录式.bash_login .profile
+/usr /usr/bin /usr/local/bin /usr/sbin /usr/lib
+source .追加
+/var可变数据 /log日志 /cache缓存
+/dev硬件设备和设备驱动
+/tmp临时文件
+/boot系统启动的引导文件
+export 临时设置
+软件安装apt rpm dnf yum 换源
+
+skill.md限制
+node cargo
+shell安装
+#! /bin/bash
+常见架构X86 AMD64 X86_64 ARM RISC-V
+编译执行和解释执行
