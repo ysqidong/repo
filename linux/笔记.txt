@@ -83,3 +83,31 @@ shell安装
 #! /bin/bash
 常见架构X86 AMD64 X86_64 ARM RISC-V
 编译执行和解释执行
+
+javascript js JavaScript 是一种用于网页开发的脚本语言，主要用于实现网页的交互功能和动态效果。
+
+npm 是 Node Package Manager 的缩写，是 Node.js 的包管理工具，用于安装、更新和管理 JavaScript 项目中的第三方库和依赖包。
+
+.ts 是 TypeScript 文件的扩展名。TypeScript 是 JavaScript 的超集，添加了静态类型检查等特性，帮助开发者编写更健壮的代码。
+
+trash-cli 创建回收站
+
+git 分支
+.git/index
+fork pull request pr修改逻辑
+tmux（Terminal Multiplexer）是一个终端多路复用器，允许你在单个终端窗口中创建和管理多个会话、窗口和面板。它特别适合远程工作，因为会话可以持久化，即使断开连接也不会丢失。
+基本使用：
+
+启动：tmux
+新建窗口：Ctrl-b c
+切换窗口：Ctrl-b n（下一个）或 Ctrl-b p（上一个）
+分割面板：Ctrl-b %（垂直）或 Ctrl-b "（水平）
+切换面板：Ctrl-b 方向键
+分离会话：Ctrl-b d（后台运行）
+重新连接：tmux attach 或 tmux a
+常用命令：
+
+列出会话：tmux ls
+杀死会话：tmux kill-session -t 会话名
+配置：编辑 ~/.tmux.conf 添加自定义键绑定。
+crontab定时任务
