@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>斯大林排序 · 伟大的肃反模拟器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #2a0f0f 0%, #1a0808 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Courier New', 'Impact', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .stalin-card {
+            background: #2a1c1ccc;
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            padding: 1.5rem 1.8rem;
+            width: 100%;
+            max-width: 1200px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 200, 100, 0.2);
+            border: 2px solid #b33e2e;
+            border-top-color: #d65c3c;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 900;
+            margin-top: 0;
+            margin-bottom: 0;
+            background: linear-gradient(135deg, #ff4d4d, #ff9f4a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 5px #ff000080;
+            letter-spacing: 2px;
+        }
+
+        .sub {
+            text-align: center;
+            color: #f9bf8f;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #b33e2e;
+            display: inline-block;
+            width: auto;
+            margin: 0 auto 1rem;
+            padding-bottom: 8px;
+            font-style: italic;
+        }
+
+        /* 镰刀锤子装饰 */
+        .soviet-badge {
+            text-align: center;
+            font-size: 2rem;
+            filter: drop-shadow(0 0 5px red);
+            letter-spacing: 10px;
+        }
+
+        /* 自定义数组区域 */
+        .custom-section {
+            background: #1f1515b3;
+            border-radius: 60px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border: 1px solid #a53f2a;
+        }
+
+        .custom-label {
+            color: #ffcc88;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-shadow: 0 0 2px black;
+        }
+
+        .array-input {
+            background: #1e1212;
+            border: 1px solid #cc5a3a;
+            color: #ffdd99;
+            padding: 8px 15px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 1rem;
+            width: 280px;
+            text-align: center;
+            outline: none;
+        }
+
+        .array-input:focus {
+            border-color: #ff6644;
+            box-shadow: 0 0 8px #ff3300;
+        }
+
+        .apply-btn {
+            background: #8b3c2a;
+            box-shadow: 0 4px 0 #4a1f14;
+            padding: 6px 20px;
+            font-size: 0.9rem;
+        }
+
+        .reset-default {
+            background: #5f3b2e;
+            box-shadow: 0 4px 0 #362016;
+        }
+
+        /* 数组展示区 */
+        .array-panel {
+            background: #160e0e;
+            border-radius: 1.8rem;
+            padding: 1.5rem 0.8rem;
+            margin: 0.8rem 0 1.2rem;
+            box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.8), 0 5px 12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #9b3f2e;
+        }
+
+        .array-items {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.9rem;
+        }
+
+        .item {
+            background: #2c1b1b;
+            width: 85px;
+            height: 95px;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 0 #0a0505;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            border: 1px solid #aa5544;
+        }
+
+        .item-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffe0b5;
+            text-shadow: 0 2px 2px #220000;
+        }
+
+        .item-index {
+            font-size: 0.7rem;
+            background: #000000aa;
+            padding: 2px 12px;
+            border-radius: 20px;
+            margin-top: 6px;
+            color: #ffbf86;
+        }
+
+        /* 恶趣味配色 */
+        .item.default { background: linear-gradient(145deg, #4a2a2a, #2e1919); }
+        .item.compare { background: linear-gradient(145deg, #e6892e, #b5531a); box-shadow: 0 0 0 3px #ffdd99, 0 8px 0 #753d12; transform: scale(1.03); }
+        .item.remove { background: linear-gradient(145deg, #b32b1a, #7a1a0c); box-shadow: 0 0 0 3px #ff7a5a, 0 8px 0 #4a1208; animation: shakeTerror 0.3s ease; }
+        .item.sorted { background: linear-gradient(145deg, #4b6b3e, #2f4d2a); box-shadow: 0 0 0 2px #b3ffa7, 0 8px 0 #1d3618; }
+
+        @keyframes shakeTerror {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-4px) rotate(-2deg); }
+            75% { transform: translateX(4px) rotate(2deg); }
+            100% { transform: translateX(0) rotate(0deg); background: #7a1a0c; }
+        }
+
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.2rem 0 0.8rem;
+        }
+
+        button {
+            background: #4d2a1f;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #ffe3c6;
+            cursor: pointer;
+            transition: 0.1s linear;
+            font-family: inherit;
+            box-shadow: 0 4px 0 #29140e;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #29140e;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .btn-primary { background: #6e3a28; box-shadow: 0 4px 0 #3e1f14; }
+        .btn-accent { background: #b3512c; box-shadow: 0 4px 0 #712d14; }
+
+        .info-bar {
+            background: #1e1111cc;
+            border-radius: 60px;
+            padding: 6px 18px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #ffcc99;
+            backdrop-filter: blur(4px);
+            margin-top: 1rem;
+            font-family: monospace;
+        }
+
+        .msg-area {
+            background: #0a0606cc;
+            border-radius: 28px;
+            padding: 8px 16px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #ffcf9a;
+            text-align: center;
+            margin-top: 0.8rem;
+            border-left: 5px solid #cc3f2a;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.2rem;
+            font-size: 0.7rem;
+            background: #25131380;
+            padding: 6px 16px;
+            border-radius: 40px;
+            margin-bottom: 1rem;
+        }
+
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        footer {
+            font-size: 0.65rem;
+            text-align: center;
+            color: #aa7f6a;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="stalin-card">
+    <div class="soviet-badge">☭ ✦ ☭</div>
+    <h1>СТАЛИН · 领袖排序法</h1>
+    <div style="text-align:center;">
+        <span class="sub">“不忠诚的数字，将被送往古拉格” — 严格递增，否则清洗</span>
+    </div>
+
+    <div class="custom-section">
+        <span class="custom-label">📋 输入反动分子名单 (数字):</span>
+        <input type="text" id="arrayInput" class="array-input" value="5,3,8,1,2" placeholder="例如: 10,7,9,2,15,6">
+        <button id="applyArrayBtn" class="apply-btn">⚡ 重新审查</button>
+        <button id="resetDefaultBtn" class="reset-default">★ 标准处决名单</button>
+    </div>
+
+    <div class="legend">
+        <span><div class="badge" style="background:#4a2a2a;"></div> 候审</span>
+        <span><div class="badge" style="background:#e6892e;"></div> 正在审讯</span>
+        <span><div class="badge" style="background:#b32b1a;"></div> 枪决/古拉格</span>
+        <span><div class="badge" style="background:#4b6b3e;"></div> 忠诚勋章</span>
+    </div>
+
+    <div class="array-panel">
+        <div class="array-items" id="arrayContainer"></div>
+    </div>
+
+    <div class="msg-area" id="stepMessage">伟大领袖等待您的指令。点击【下一步】开始大清洗。</div>
+
+    <div class="controls">
+        <button id="prevBtn" class="btn-primary">◀ 翻旧账</button>
+        <button id="autoBtn" class="btn-accent">▶ 自动肃反</button>
+        <button id="nextBtn" class="btn-primary">下一步审查 ▶</button>
+    </div>
+    <div class="info-bar" id="stepCounter">审查阶段 0 / 0</div>
+    <footer>⚡ 规则：任何数字如果 ≤ 前一个忠诚者，即被视为“背叛革命”，立刻枪毙。幸存者组成钢铁般的递增序列。</footer>
+</div>
+
+<script>
+    // ---------- 恶趣味斯大林排序生成器 ----------
+    const DEFAULT_ARRAY = [5, 3, 8, 1, 2];
+    
+    // 随机枪决口号库
+    const EXECUTION_PHRASES = [
+        "🔫 对墙站好！数值太小，背叛了革命！", 
+        "❄️ 送你去西伯利亚挖土豆！", 
+        "📜 人民举报你不够大，枪决！", 
+        "🚩 你比领袖的小拇指还小，古拉格欢迎你", 
+        "🤡 反对派！立刻消失",
+        "💀 不够忠诚，子弹已上膛",
+        "👎 你和领袖相比就是个负数"
+    ];
+    
+    const PRAISE_PHRASES = [
+        "❤️ 伟大！忠诚的数字，获得斯大林勋章",
+        "⭐ 好同志，你比前任更大，保留职位",
+        "🌾 优秀的集体农庄成员，继续前进",
+        "📈 数字增长符合五年计划！留下",
+        "🎖️ 比前任大，证明自己清白，光荣幸存"
+    ];
+    
+    const COMPARE_PHRASES = [
+        "🕵️‍♂️ 秘密警察对比：%prev% 与 %curr%", 
+        "☭ 领袖看着你：%curr% 是否 > %prev% ?", 
+        "📢 群众检举：%curr% 挑战领袖标准", 
+        "🔍 内务部审查：%prev% 和 %curr% 谁更忠诚"
+    ];
+    
+    function getRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    function buildStalinStepsFromArray(arr) {
+        if (!arr || arr.length === 0) {
+            return [{
+                array: [],
+                styles: [],
+                message: '⚠️ 空名单，连个处决对象都没有？输入几个数字吧同志。'
+            }];
+        }
+        
+        const steps = [];
+        // 初始状态
+        steps.push({
+            array: [...arr],
+            styles: arr.map(() => 'default'),
+            message: `📋 克里姆林宫收到名单: [${arr.join(', ')}] 。领袖 ${arr[0]} 自动成为忠诚卫士。开始审查其余人。`
+        });
+        
+        let currentArr = [...arr];
+        let lastKeptVal = currentArr[0];
+        let lastKeptIdx = 0;
+        let scanIdx = 1;
+        
+        while (scanIdx < currentArr.length) {
+            const curVal = currentArr[scanIdx];
+            const refIdx = lastKeptIdx;
+            const isKeep = (curVal > lastKeptVal);
+            
+            // 随机比较台词
+            let compareText = getRandom(COMPARE_PHRASES).replace("%prev%", lastKeptVal).replace("%curr%", curVal);
+            if (isKeep) {
+                // 保留步骤: 先展示比较高亮
+                const preKeepStyles = currentArr.map((_, idx) => {
+                    if (idx === refIdx || idx === scanIdx) return 'compare';
+                    return 'sorted';
+                });
+                steps.push({
+                    array: [...currentArr],
+                    styles: preKeepStyles,
+                    message: `⚖️ ${compareText} → ${curVal} > ${lastKeptVal} ，属于忠诚者。 ${getRandom(PRAISE_PHRASES)}`
+                });
+                // 更新保留信息
+                lastKeptVal = curVal;
+                lastKeptIdx = scanIdx;
+                scanIdx++;
+                // 保留后全体标记为sorted（除了后续可能）
+                const afterKeepStyles = currentArr.map((_, idx) => {
+                    return (idx <= lastKeptIdx) ? 'sorted' : 'default';
+                });
+                steps.push({
+                    array: [...currentArr],
+                    styles: afterKeepStyles,
+                    message: `✔️ 数字 ${curVal} 获得“红旗勋章”，继续跟随领袖。`
+                });
+            } else {
+                // 删除：先展示逮捕 + 枪决高亮
+                const preRemoveStyles = currentArr.map((_, idx) => {
+                    if (idx === refIdx) return 'compare';
+                    if (idx === scanIdx) return 'remove';
+                    return 'sorted';
+                });
+                steps.push({
+                    array: [...currentArr],
+                    styles: preRemoveStyles,
+                    message: `🚨 ${compareText} → ${curVal} ≤ ${lastKeptVal} ，叛徒！ ${getRandom(EXECUTION_PHRASES)}`
+                });
+                // 执行删除
+                const removedValue = curVal;
+                const newArr = [...currentArr];
+                newArr.splice(scanIdx, 1);
+                currentArr = newArr;
+                // 删除后显示新阵容
+                const afterRemoveStyles = currentArr.map(() => 'sorted');
+                steps.push({
+                    array: [...currentArr],
+                    styles: afterRemoveStyles,
+                    message: `💀 ${removedValue} 已被内务部清除！剩余序列: [${currentArr.join(', ')}] 。继续清洗。`
+                });
+                // scanIdx 不增加，因为后面元素补位
+            }
+        }
+        
+        // 最终胜利
+        const finalStyles = currentArr.map(() => 'sorted');
+        let finalMsg = `🎉 大清洗结束！最终钢铁序列: [${currentArr.join(', ')}] ，严格递增，无人敢背叛！领袖万岁！`;
+        if (currentArr.length === 1) {
+            finalMsg = `🏆 最终只有领袖 ${currentArr[0]} 活了下来，其他都是叛徒！伟大的孤独！`;
+        }
+        steps.push({
+            array: [...currentArr],
+            styles: finalStyles,
+            message: finalMsg
+        });
+        return steps;
+    }
+    
+    // ---------- 全局变量 ----------
+    let states = [];
+    let currentStep = 0;
+    let autoInterval = null;
+    
+    const arrayContainer = document.getElementById('arrayContainer');
+    const stepMsgDiv = document.getElementById('stepMessage');
+    const stepCounterSpan = document.getElementById('stepCounter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const autoBtn = document.getElementById('autoBtn');
+    const applyArrayBtn = document.getElementById('applyArrayBtn');
+    const resetDefaultBtn = document.getElementById('resetDefaultBtn');
+    const arrayInput = document.getElementById('arrayInput');
+    
+    function renderState(stepIndex) {
+        if (!states.length || stepIndex < 0 || stepIndex >= states.length) return;
+        const state = states[stepIndex];
+        const arr = state.array;
+        const styles = state.styles;
+        const message = state.message;
+        
+        arrayContainer.innerHTML = '';
+        if (arr.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.textContent = '☠️ 所有人都不合格，连领袖也被推翻？这不可能！请重新输入。';
+            emptyDiv.style.color = '#ffaa88';
+            emptyDiv.style.padding = '20px';
+            arrayContainer.appendChild(emptyDiv);
+        } else {
+            arr.forEach((value, idx) => {
+                const card = document.createElement('div');
+                card.className = `item ${styles[idx] || 'default'}`;
+                const valueSpan = document.createElement('div');
+                valueSpan.className = 'item-value';
+                valueSpan.textContent = value;
+                const indexSpan = document.createElement('div');
+                indexSpan.className = 'item-index';
+                indexSpan.textContent = `[${idx}]`;
+                card.appendChild(valueSpan);
+                card.appendChild(indexSpan);
+                arrayContainer.appendChild(card);
+            });
+        }
+        stepMsgDiv.innerHTML = `📢 ${message}`;
+        stepCounterSpan.innerHTML = `肃反阶段 ${stepIndex + 1} / ${states.length}`;
+        prevBtn.disabled = (stepIndex === 0);
+        nextBtn.disabled = (stepIndex === states.length - 1);
+        if (stepIndex === states.length - 1 && autoInterval) stopAutoPlay();
+    }
+    
+    function nextStep() {
+        if (currentStep + 1 < states.length) {
+            currentStep++;
+            renderState(currentStep);
+        } else if (autoInterval) stopAutoPlay();
+    }
+    
+    function prevStep() {
+        if (currentStep - 1 >= 0) {
+            currentStep--;
+            renderState(currentStep);
+        }
+    }
+    
+    function startAutoPlay() {
+        if (autoInterval) clearInterval(autoInterval);
+        autoInterval = setInterval(() => {
+            if (currentStep + 1 < states.length) nextStep();
+            else stopAutoPlay();
+        }, 900);
+        autoBtn.textContent = '⏸ 暂停清洗';
+        autoBtn.style.background = '#aa4c2c';
+    }
+    
+    function stopAutoPlay() {
+        if (autoInterval) {
+            clearInterval(autoInterval);
+            autoInterval = null;
+        }
+        autoBtn.textContent = '▶ 自动肃反';
+        autoBtn.style.background = '#b3512c';
+    }
+    
+    function toggleAutoPlay() {
+        if (autoInterval) stopAutoPlay();
+        else startAutoPlay();
+    }
+    
+    function resetWithCustomArray() {
+        if (autoInterval) stopAutoPlay();
+        let raw = arrayInput.value.trim();
+        if (!raw) raw = DEFAULT_ARRAY.join(",");
+        let parts = raw.split(/[ ,]+/);
+        let numbers = [];
+        for (let p of parts) {
+            let num = Number(p);
+            if (!isNaN(num) && p !== "") numbers.push(num);
+        }
+        if (numbers.length === 0) numbers = [5, 3, 8, 1, 2];
+        states = buildStalinStepsFromArray(numbers);
+        currentStep = 0;
+        renderState(currentStep);
+    }
+    
+    function resetToDefault() {
+        arrayInput.value = DEFAULT_ARRAY.join(",");
+        resetWithCustomArray();
+    }
+    
+    function init() {
+        arrayInput.value = DEFAULT_ARRAY.join(",");
+        states = buildStalinStepsFromArray(DEFAULT_ARRAY);
+        currentStep = 0;
+        renderState(currentStep);
+        prevBtn.addEventListener('click', prevStep);
+        nextBtn.addEventListener('click', nextStep);
+        autoBtn.addEventListener('click', toggleAutoPlay);
+        applyArrayBtn.addEventListener('click', resetWithCustomArray);
+        resetDefaultBtn.addEventListener('click', resetToDefault);
+    }
+    
+    init();
+</script>
+</body>
+</html>
