@@ -165,3 +165,66 @@ v 会列出正在归档的文件名
 -v：verbose（显示详细过程）
 -z：gzip（解压 gzip）
 -f：file（指定归档文件名）
+
+DNS 这是啥？
+DNS 就是“域名翻译器”。
+
+电脑只认 IP 地址，比如 192.168.1.1
+人喜欢记域名，比如 example.com
+DNS 负责把域名翻成 IP
+就像：
+
+你记名字
+通讯录帮你找到电话号码
+常见 DNS 记录类型（最容易理解）
+A
+
+把域名翻成 IPv4 地址
+例子：example.com -> 192.0.2.1
+AAAA
+
+把域名翻成 IPv6 地址
+例子：example.com -> 2001:db8::1
+CNAME
+
+一个域名当做别名，指向另一个域名
+例子：www.example.com -> example.com
+MX
+
+邮件用的
+告诉别人：给这个域名发邮件，哪个邮箱服务器收
+例子：example.com -> mail.example.com
+NS
+
+告诉别人：谁是这个域名的“负责 DNS 的服务器”
+例子：example.com -> ns1.example.com
+TXT
+
+放一些文字信息
+常用于验证、邮箱安全设置（SPF、DKIM）
+例子：example.com -> "v=spf1 include:..."
+SOA
+
+域名区域的“配置说明书”
+记录谁是主服务器、管理员邮箱、更新频率等
+每个域名一定要有一个
+最简单理解
+A / AAAA：域名直接对应一个地址
+CNAME：域名的“别名”
+MX：邮件去哪里送
+NS：谁管这个域名的解析
+TXT：放一些验证信息
+SOA：域名配置说明书
+
+IPv4
+全称：Internet Protocol version 4
+形式：4 个十进制数，每个 0-255，用点分隔
+例子：192.168.1.1
+最大地址数量约 42 亿个
+现在已经快不够用了
+IPv6
+全称：Internet Protocol version 6
+形式：8 组 16 进制数，用冒号分隔
+例子：2001:0db8:85a3:0000:0000:8a2e:0370:7334
+地址数量非常大，几乎不会用完
+主要是为了解决 IPv4 地址不够的问题
