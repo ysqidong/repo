@@ -1,0 +1,6 @@
+[project]
+name = "11_linked_list"
+version = "0.1.0"
+description = "Linked List Data Structure - Course 11"
+requires-python = ">=3.12"
+dependencies = []
