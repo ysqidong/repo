@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树（Tree）数据结构 — 第六章：数据库中的树</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0f172a;
+    --bg-slide: #1e293b;
+    --bg-card: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #e2e8f0;
+    --success: #4ade80;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+  }
+
+  /* ===== Slide Container ===== */
+  #slides-container {
+    position: relative;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 60px 100px 60px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  /* ===== Slide Content Card ===== */
+  .slide-card {
+    background: var(--bg-slide);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 160px);
+    padding: 20px 30px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ===== Typography ===== */
+  .slide-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+
+  .slide-subtitle {
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .slide-body {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-bright);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .slide-body ul, .slide-body ol {
+    margin-left: 28px;
+    margin-bottom: 16px;
+  }
+
+  .slide-body li {
+    margin-bottom: 8px;
+  }
+
+  .slide-body li::marker {
+    color: var(--accent);
+  }
+
+  /* ===== Highlight ===== */
+  .hl { color: var(--accent); font-weight: 600; }
+  .hl2 { color: var(--accent2); font-weight: 600; }
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+  .hl-danger { color: var(--danger); font-weight: 600; }
+
+  /* ===== Code / Mono ===== */
+  code, .mono {
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: var(--accent);
+  }
+
+  .code-block {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 10px 0;
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-bright);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .syn-kw { color: #c084fc; font-weight: 600; }
+  .syn-str { color: #4ade80; }
+  .syn-cmt { color: #64748b; }
+  .syn-num { color: #fb923c; }
+  .syn-func { color: #60a5fa; }
+  .syn-cls { color: #fbbf24; }
+  .syn-blt { color: #22d3ee; }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 1rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  th {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  tr:hover {
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  /* ===== Tree SVG ===== */
+  .tree-svg {
+    display: block;
+    margin: 8px auto;
+    max-width: 100%;
+  }
+
+  .tree-node circle {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  .tree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 14px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .tree-node.leaf circle {
+    stroke: var(--success);
+  }
+
+  .tree-node.danger circle {
+    stroke: var(--danger);
+    stroke-width: 3;
+    fill: rgba(248, 113, 113, 0.12);
+  }
+
+  .tree-node.highlight circle {
+    stroke: var(--warn);
+    stroke-width: 3.5;
+    fill: rgba(251, 191, 36, 0.15);
+  }
+
+  /* Active step (gold highlight) */
+  .tree-node.active-step circle {
+    stroke: var(--warn) !important;
+    stroke-width: 3.5 !important;
+    fill: rgba(251, 191, 36, 0.2) !important;
+  }
+  .tree-node.active-step text {
+    fill: var(--warn) !important;
+    font-weight: 700;
+  }
+
+  /* Cur step (blue dashed) */
+  .tree-node.cur-step circle {
+    stroke: var(--accent) !important;
+    stroke-width: 3 !important;
+    stroke-dasharray: 4, 3;
+  }
+  .tree-node.cur-step text {
+    fill: var(--accent) !important;
+    font-weight: 700;
+  }
+
+  /* Inserted node style (green) */
+  .tree-node.inserted circle {
+    stroke: var(--success) !important;
+    stroke-width: 3.5 !important;
+    fill: rgba(74, 222, 128, 0.2) !important;
+  }
+  .tree-node.inserted text {
+    fill: var(--success) !important;
+    font-weight: 700;
+  }
+
+  /* ===== B-Tree / B+Tree Node Styles ===== */
+  .btree-node rect {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2;
+    rx: 8;
+    ry: 8;
+  }
+
+  .btree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .btree-node.leaf rect {
+    stroke: var(--success);
+  }
+
+  .btree-node.index rect {
+    stroke: var(--accent2);
+  }
+
+  .btree-edge {
+    stroke: var(--border);
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .leaf-link {
+    stroke: var(--warn);
+    stroke-width: 2;
+    stroke-dasharray: 6, 4;
+    fill: none;
+    marker-end: url(#arrow-warn);
+  }
+
+  .btree-node.active-step rect {
+    stroke: var(--warn) !important;
+    stroke-width: 3.5 !important;
+    fill: rgba(251, 191, 36, 0.2) !important;
+  }
+  .btree-node.active-step text {
+    fill: var(--warn) !important;
+    font-weight: 700;
+  }
+
+  .btree-node.cur-step rect {
+    stroke: var(--accent) !important;
+    stroke-width: 3 !important;
+    stroke-dasharray: 4, 3;
+  }
+  .btree-node.cur-step text {
+    fill: var(--accent) !important;
+    font-weight: 700;
+  }
+
+  .btree-sep {
+    stroke: var(--border);
+    stroke-width: 1.5;
+  }
+
+  /* ===== Anim Layout (dynamic slides) ===== */
+  .anim-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .anim-tree {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+
+  .anim-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .result-box {
+    min-height: 36px;
+    font-family: "Fira Code", Consolas, monospace;
+    font-size: 1.05rem;
+    color: var(--warn);
+    font-weight: 700;
+    background: rgba(0,0,0,0.15);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .viz-box {
+    min-height: 80px;
+    background: rgba(0,0,0,0.1);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .desc-box {
+    min-height: 30px;
+    color: var(--text-dim);
+    font-size: 1rem;
+    padding: 4px 0;
+  }
+
+  /* ===== Step Controls ===== */
+  .step-btn {
+    min-width: 120px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--bg-deep);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .step-btn:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .step-btn.done {
+    background: transparent;
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  /* ===== Two / Three Column Layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .col-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 18px;
+  }
+
+  /* ===== Tip / Note Box ===== */
+  .tip-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 12px 18px;
+    border-radius: 0 12px 12px 0;
+    margin: 12px 0;
+    font-size: 1.05rem;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ===== Math / Formula ===== */
+  .formula {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 1.1rem;
+    margin: 12px 0;
+    font-family: "Fira Code", Consolas, monospace;
+  }
+
+  /* ===== Controls ===== */
+  #controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+    padding: 0 40px;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+
+  .ctrl-btn svg {
+    width: 18px; height: 18px;
+    fill: currentColor;
+  }
+
+  #page-indicator {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #page-indicator .current {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  /* ===== Progress Bar ===== */
+  #progress-bar {
+    position: fixed;
+    bottom: 80px; left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Key hint ===== */
+  .key-hint {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    z-index: 90;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1100px) {
+    .slide { padding: 40px 30px 100px 30px; }
+    .slide-card { padding: 20px 26px; }
+    .slide-title { font-size: 1.8rem; }
+    .slide-body { font-size: 1.05rem; }
+    .two-col { grid-template-columns: 1fr; }
+    .three-col { grid-template-columns: 1fr; }
+    .anim-layout { flex-direction: column; align-items: center; }
+    .anim-panel { width: 100%; }
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 20px 16px 100px 16px; }
+    .slide-card { padding: 16px 18px; }
+    .slide-title { font-size: 1.6rem; margin-bottom: 12px; }
+    .slide-body { font-size: 1rem; }
+    .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; }
+    table { font-size: 0.95rem; }
+    th, td { padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== SLIDES ======================== -->
+<div id="slides-container">
+
+<!-- ===== Slide 0: 标题页 ===== -->
+<div class="slide" data-index="0">
+  <div class="slide-card" style="justify-content:center;align-items:center;text-align:center;">
+    <div style="font-size:1.2rem;color:var(--text-dim);margin-bottom:20px;">树（Tree）数据结构</div>
+    <div class="slide-title" style="font-size:3rem;margin-bottom:30px;">第六章 数据库中的树</div>
+    <div style="font-size:1.3rem;color:var(--accent2);margin-bottom:40px;">Database Trees: B-Tree &amp; B+ Tree</div>
+    <svg class="tree-svg" width="640" height="240" viewBox="0 0 640 240">
+      <defs>
+        <marker id="arrow-warn" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 L2,4 Z" fill="var(--warn)"/>
+        </marker>
+      </defs>
+      <!-- B+ Tree 示意图 -->
+      <!-- 根 [20, 40] -->
+      <g class="btree-node index" transform="translate(280,20)">
+        <rect x="0" y="0" width="80" height="32" rx="8"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="30"/>
+        <text x="20" y="16" font-size="13">20</text>
+        <text x="60" y="16" font-size="13">40</text>
+      </g>
+      <!-- 根到内部结点的边 -->
+      <line class="btree-edge" x1="300" y1="52" x2="120" y2="95"/>
+      <line class="btree-edge" x1="320" y1="52" x2="250" y2="95"/>
+      <line class="btree-edge" x1="340" y1="52" x2="400" y2="95"/>
+      <!-- 内部结点 -->
+      <g class="btree-node index" transform="translate(100,95)">
+        <rect x="0" y="0" width="40" height="28" rx="6"/>
+        <text x="20" y="14" font-size="12">10</text>
+      </g>
+      <g class="btree-node index" transform="translate(230,95)">
+        <rect x="0" y="0" width="40" height="28" rx="6"/>
+        <text x="20" y="14" font-size="12">30</text>
+      </g>
+      <g class="btree-node index" transform="translate(380,95)">
+        <rect x="0" y="0" width="40" height="28" rx="6"/>
+        <text x="20" y="14" font-size="12">50</text>
+      </g>
+      <!-- 内部结点到叶子的边 -->
+      <line class="btree-edge" x1="110" y1="123" x2="70" y2="170"/>
+      <line class="btree-edge" x1="130" y1="123" x2="145" y2="170"/>
+      <line class="btree-edge" x1="240" y1="123" x2="220" y2="170"/>
+      <line class="btree-edge" x1="260" y1="123" x2="295" y2="170"/>
+      <line class="btree-edge" x1="390" y1="123" x2="370" y2="170"/>
+      <line class="btree-edge" x1="410" y1="123" x2="445" y2="170"/>
+      <!-- 叶子 -->
+      <g class="btree-node leaf" transform="translate(40,170)">
+        <rect x="0" y="0" width="60" height="28" rx="6"/>
+        <line class="btree-sep" x1="20" y1="2" x2="20" y2="26"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="26"/>
+        <text x="10" y="14" font-size="11">3</text>
+        <text x="30" y="14" font-size="11">5</text>
+        <text x="50" y="14" font-size="11">8</text>
+      </g>
+      <g class="btree-node leaf" transform="translate(115,170)">
+        <rect x="0" y="0" width="60" height="28" rx="6"/>
+        <line class="btree-sep" x1="20" y1="2" x2="20" y2="26"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="26"/>
+        <text x="10" y="14" font-size="11">10</text>
+        <text x="30" y="14" font-size="11">12</text>
+        <text x="50" y="14" font-size="11">15</text>
+      </g>
+      <g class="btree-node leaf" transform="translate(190,170)">
+        <rect x="0" y="0" width="60" height="28" rx="6"/>
+        <line class="btree-sep" x1="20" y1="2" x2="20" y2="26"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="26"/>
+        <text x="10" y="14" font-size="11">20</text>
+        <text x="30" y="14" font-size="11">22</text>
+        <text x="50" y="14" font-size="11">25</text>
+      </g>
+      <g class="btree-node leaf" transform="translate(265,170)">
+        <rect x="0" y="0" width="60" height="28" rx="6"/>
+        <line class="btree-sep" x1="20" y1="2" x2="20" y2="26"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="26"/>
+        <text x="10" y="14" font-size="11">30</text>
+        <text x="30" y="14" font-size="11">35</text>
+        <text x="50" y="14" font-size="11">38</text>
+      </g>
+      <g class="btree-node leaf" transform="translate(340,170)">
+        <rect x="0" y="0" width="60" height="28" rx="6"/>
+        <line class="btree-sep" x1="20" y1="2" x2="20" y2="26"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="26"/>
+        <text x="10" y="14" font-size="11">40</text>
+        <text x="30" y="14" font-size="11">42</text>
+        <text x="50" y="14" font-size="11">45</text>
+      </g>
+      <g class="btree-node leaf" transform="translate(415,170)">
+        <rect x="0" y="0" width="60" height="28" rx="6"/>
+        <line class="btree-sep" x1="20" y1="2" x2="20" y2="26"/>
+        <line class="btree-sep" x1="40" y1="2" x2="40" y2="26"/>
+        <text x="10" y="14" font-size="11">50</text>
+        <text x="30" y="14" font-size="11">55</text>
+        <text x="50" y="14" font-size="11">60</text>
+      </g>
+      <!-- 叶子链表 -->
+      <line class="leaf-link" x1="100" y1="184" x2="115" y2="184"/>
+      <line class="leaf-link" x1="175" y1="184" x2="190" y2="184"/>
+      <line class="leaf-link" x1="250" y1="184" x2="265" y2="184"/>
+      <line class="leaf-link" x1="325" y1="184" x2="340" y2="184"/>
+      <line class="leaf-link" x1="400" y1="184" x2="415" y2="184"/>
+      <text x="320" y="225" text-anchor="middle" fill="var(--success)" font-size="12" font-weight="600">叶子结点通过链表连接，支持高效范围查询</text>
+    </svg>
+    <div style="color:var(--text-dim);margin-top:16px;font-size:1rem;">多路平衡 · 磁盘优化 · 索引基石</div>
+  </div>
+</div>
+
+<!-- ===== Slide 1: 从平衡树到多路平衡树 ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">从平衡树到多路平衡树</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:center;">
+        <div>
+          <div class="slide-subtitle">回顾</div>
+          <ul>
+            <li>BST / AVL / 红黑树都是<span class="hl">二叉树</span></li>
+            <li>每个结点最多 <span class="hl">2</span> 个孩子</li>
+            <li>平衡时树高 ≈ <span class="hl">log₂n</span></li>
+          </ul>
+          <div class="slide-subtitle" style="margin-top:20px;">问题</div>
+          <ul>
+            <li>数据量巨大时（千万级），树高仍有 <span class="hl-warn">20~30</span> 层</li>
+            <li>数据库数据存储在<span class="hl-danger">磁盘</span>，每次访问一个结点 = 一次磁盘 IO</li>
+            <li>二叉树太高 → <span class="hl-danger">IO 次数多</span> → 查询慢</li>
+          </ul>
+          <div class="slide-subtitle" style="margin-top:20px;">解决思路</div>
+          <div class="tip-box">
+            <strong>多路平衡树：</strong>一个结点存多个键，分多个支路，把树变"矮胖"
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <svg class="tree-svg" width="560" height="300" viewBox="0 0 560 300">
+            <!-- 左侧：高而细的二叉树 -->
+            <text x="120" y="18" text-anchor="middle" fill="var(--danger)" font-size="13" font-weight="600">二叉树（高而细）</text>
+            <line class="tree-edge" x1="120" y1="35" x2="60" y2="90"/>
+            <line class="tree-edge" x1="120" y1="35" x2="180" y2="90"/>
+            <line class="tree-edge" x1="60" y1="90" x2="30" y2="145"/>
+            <line class="tree-edge" x1="60" y1="90" x2="90" y2="145"/>
+            <line class="tree-edge" x1="180" y1="90" x2="150" y2="145"/>
+            <line class="tree-edge" x1="180" y1="90" x2="210" y2="145"/>
+            <line class="tree-edge" x1="30" y1="145" x2="15" y2="200"/>
+            <line class="tree-edge" x1="30" y1="145" x2="45" y2="200"/>
+            <line class="tree-edge" x1="90" y1="145" x2="75" y2="200"/>
+            <line class="tree-edge" x1="90" y1="145" x2="105" y2="200"/>
+            <g class="tree-node" transform="translate(120,35)"><circle r="16"/><text font-size="12">50</text></g>
+            <g class="tree-node" transform="translate(60,90)"><circle r="15"/><text font-size="11">30</text></g>
+            <g class="tree-node" transform="translate(180,90)"><circle r="15"/><text font-size="11">70</text></g>
+            <g class="tree-node" transform="translate(30,145)"><circle r="14"/><text font-size="11">20</text></g>
+            <g class="tree-node" transform="translate(90,145)"><circle r="14"/><text font-size="11">40</text></g>
+            <g class="tree-node" transform="translate(150,145)"><circle r="14"/><text font-size="11">60</text></g>
+            <g class="tree-node" transform="translate(210,145)"><circle r="14"/><text font-size="11">80</text></g>
+            <g class="tree-node" transform="translate(15,200)"><circle r="11"/><text font-size="10">10</text></g>
+            <g class="tree-node" transform="translate(45,200)"><circle r="11"/><text font-size="10">25</text></g>
+            <g class="tree-node" transform="translate(75,200)"><circle r="11"/><text font-size="10">55</text></g>
+            <g class="tree-node" transform="translate(105,200)"><circle r="11"/><text font-size="10">75</text></g>
+            <text x="120" y="255" text-anchor="middle" fill="var(--danger)" font-size="12">高度 ≈ log₂n，IO 次数多</text>
+
+            <!-- VS -->
+            <text x="280" y="130" text-anchor="middle" fill="var(--accent)" font-size="28" font-weight="700">VS</text>
+
+            <!-- 右侧：矮而胖的多路树 -->
+            <text x="430" y="18" text-anchor="middle" fill="var(--success)" font-size="13" font-weight="600">多路树（矮而胖）</text>
+            <line class="btree-edge" x1="430" y1="40" x2="360" y2="100"/>
+            <line class="btree-edge" x1="430" y1="40" x2="500" y2="100"/>
+            <g class="btree-node index" transform="translate(385,25)">
+              <rect x="0" y="0" width="90" height="30" rx="8"/>
+              <line class="btree-sep" x1="30" y1="2" x2="30" y2="28"/>
+              <line class="btree-sep" x1="60" y1="2" x2="60" y2="28"/>
+              <text x="15" y="15" font-size="12">10</text>
+              <text x="45" y="15" font-size="12">25</text>
+              <text x="75" y="15" font-size="12">50</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(320,100)">
+              <rect x="0" y="0" width="80" height="28" rx="6"/>
+              <line class="btree-sep" x1="26" y1="2" x2="26" y2="26"/>
+              <line class="btree-sep" x1="53" y1="2" x2="53" y2="26"/>
+              <text x="13" y="14" font-size="11">3</text>
+              <text x="39" y="14" font-size="11">5</text>
+              <text x="66" y="14" font-size="11">8</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(460,100)">
+              <rect x="0" y="0" width="80" height="28" rx="6"/>
+              <line class="btree-sep" x1="26" y1="2" x2="26" y2="26"/>
+              <line class="btree-sep" x1="53" y1="2" x2="53" y2="26"/>
+              <text x="13" y="14" font-size="11">15</text>
+              <text x="39" y="14" font-size="11">20</text>
+              <text x="66" y="14" font-size="11">30</text>
+            </g>
+            <text x="430" y="170" text-anchor="middle" fill="var(--success)" font-size="12">高度大幅降低，IO 次数少</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 2: B-Tree 结构 ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">B-Tree 结构</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:center;">
+        <div>
+          <div class="slide-subtitle">m 阶 B-Tree 定义</div>
+          <ul>
+            <li>每个结点最多 <span class="hl">m</span> 个孩子，<span class="hl">m−1</span> 个键</li>
+            <li>根结点至少有 <span class="hl">2</span> 个孩子（除非只有根）</li>
+            <li>非根非叶结点至少有 <span class="hl">⌈m/2⌉</span> 个孩子</li>
+            <li><span class="hl-success">所有叶子在同一层</span></li>
+          </ul>
+          <div class="formula">阶 m = 3（2-3 树）：每个结点最多 2 个键，3 个孩子</div>
+          <div class="tip-box">
+            <strong>核心思想：</strong>把磁盘页大小（如 16KB）作为一个结点，一次 IO 读入多个键
+          </div>
+          <div class="slide-subtitle" style="margin-top:16px;">示例：3 阶 B-Tree</div>
+          <p style="color:var(--text-dim);font-size:0.95rem;">[10, 20, 3, 5, 15, 25, 12, 30]</p>
+          <p style="color:var(--text-dim);font-size:0.95rem;">[10, 20, 5, 3, 12, 15, 25, 30]</p>
+        </div>
+        <div style="text-align:center;">
+          <svg class="tree-svg" width="420" height="220" viewBox="0 0 420 220">
+            <!-- 根 [10, 20] -->
+            <g class="btree-node" transform="translate(170,15)">
+              <rect x="0" y="0" width="80" height="32" rx="8"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="30"/>
+              <text x="20" y="16" font-size="14">10</text>
+              <text x="60" y="16" font-size="14">20</text>
+            </g>
+            <!-- 边 -->
+            <line class="btree-edge" x1="190" y1="47" x2="80" y2="100"/>
+            <line class="btree-edge" x1="210" y1="47" x2="210" y2="100"/>
+            <line class="btree-edge" x1="230" y1="47" x2="340" y2="100"/>
+            <!-- 孩子（也是叶子，B-Tree 数据存于所有结点） -->
+            <g class="btree-node leaf" transform="translate(45,100)">
+              <rect x="0" y="0" width="70" height="28" rx="6"/>
+              <line class="btree-sep" x1="35" y1="2" x2="35" y2="26"/>
+              <text x="17" y="14" font-size="12">3</text>
+              <text x="52" y="14" font-size="12">5</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(175,100)">
+              <rect x="0" y="0" width="70" height="28" rx="6"/>
+              <line class="btree-sep" x1="35" y1="2" x2="35" y2="26"/>
+              <text x="17" y="14" font-size="12">12</text>
+              <text x="52" y="14" font-size="12">15</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(305,100)">
+              <rect x="0" y="0" width="70" height="28" rx="6"/>
+              <line class="btree-sep" x1="35" y1="2" x2="35" y2="26"/>
+              <text x="17" y="14" font-size="12">25</text>
+              <text x="52" y="14" font-size="12">30</text>
+            </g>
+            <text x="210" y="160" text-anchor="middle" fill="var(--success)" font-size="12" font-weight="600">所有叶子在同一层 ✓（根也存储键值）</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 3: B+ Tree 结构 ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">B+ Tree 结构</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:start;">
+        <div>
+          <div class="slide-subtitle">B+ Tree vs B-Tree</div>
+          <table>
+            <thead>
+              <tr><th>特性</th><th>B-Tree</th><th>B+ Tree</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>数据存储位置</td>
+                <td>所有结点</td>
+                <td><span class="hl-success">仅叶子结点</span></td>
+              </tr>
+              <tr>
+                <td>非叶子作用</td>
+                <td>存键+数据指针</td>
+                <td><span class="hl">纯索引</span></td>
+              </tr>
+              <tr>
+                <td>叶子连接</td>
+                <td>无</td>
+                <td><span class="hl-success">双向链表</span></td>
+              </tr>
+              <tr>
+                <td>范围查询</td>
+                <td>需中序遍历</td>
+                <td><span class="hl-success">链表顺序扫描</span></td>
+              </tr>
+              <tr>
+                <td>树高</td>
+                <td>略高</td>
+                <td><span class="hl">更低</span>（索引更紧凑）</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="tip-box" style="margin-top:12px;">
+            <strong>关键优势：</strong>非叶子结点不存数据，同样大小页能存更多键，树更矮
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:8px;">B+ Tree 示意图（重点：叶子链表）</p>
+          <svg class="tree-svg" width="500" height="280" viewBox="0 0 500 280">
+            <defs>
+              <marker id="arrow-warn2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 L2,4 Z" fill="var(--warn)"/>
+              </marker>
+            </defs>
+            <!-- 根（纯索引）[20, 40] -->
+            <g class="btree-node index" transform="translate(190,15)">
+              <rect x="0" y="0" width="80" height="32" rx="8"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="30"/>
+              <text x="20" y="16" font-size="14">20</text>
+              <text x="60" y="16" font-size="14">40</text>
+            </g>
+            <!-- 根到内部结点的边 -->
+            <line class="btree-edge" x1="210" y1="47" x2="100" y2="95"/>
+            <line class="btree-edge" x1="230" y1="47" x2="230" y2="95"/>
+            <line class="btree-edge" x1="250" y1="47" x2="360" y2="95"/>
+            <!-- 内部结点（纯索引） -->
+            <g class="btree-node index" transform="translate(80,95)">
+              <rect x="0" y="0" width="40" height="28" rx="6"/>
+              <text x="20" y="14" font-size="12">10</text>
+            </g>
+            <g class="btree-node index" transform="translate(210,95)">
+              <rect x="0" y="0" width="40" height="28" rx="6"/>
+              <text x="20" y="14" font-size="12">30</text>
+            </g>
+            <g class="btree-node index" transform="translate(340,95)">
+              <rect x="0" y="0" width="40" height="28" rx="6"/>
+              <text x="20" y="14" font-size="12">50</text>
+            </g>
+            <!-- 内部结点到叶子的边 -->
+            <line class="btree-edge" x1="90" y1="123" x2="70" y2="170"/>
+            <line class="btree-edge" x1="110" y1="123" x2="140" y2="170"/>
+            <line class="btree-edge" x1="220" y1="123" x2="210" y2="170"/>
+            <line class="btree-edge" x1="240" y1="123" x2="280" y2="170"/>
+            <line class="btree-edge" x1="350" y1="123" x2="350" y2="170"/>
+            <line class="btree-edge" x1="370" y1="123" x2="420" y2="170"/>
+            <!-- 叶子（仅叶子存数据） -->
+            <g class="btree-node leaf" transform="translate(40,170)">
+              <rect x="0" y="0" width="60" height="26" rx="5"/>
+              <line class="btree-sep" x1="20" y1="2" x2="20" y2="24"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="24"/>
+              <text x="10" y="13" font-size="10">3</text>
+              <text x="30" y="13" font-size="10">5</text>
+              <text x="50" y="13" font-size="10">8</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(110,170)">
+              <rect x="0" y="0" width="60" height="26" rx="5"/>
+              <line class="btree-sep" x1="20" y1="2" x2="20" y2="24"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="24"/>
+              <text x="10" y="13" font-size="10">10</text>
+              <text x="30" y="13" font-size="10">12</text>
+              <text x="50" y="13" font-size="10">15</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(180,170)">
+              <rect x="0" y="0" width="60" height="26" rx="5"/>
+              <line class="btree-sep" x1="20" y1="2" x2="20" y2="24"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="24"/>
+              <text x="10" y="13" font-size="10">20</text>
+              <text x="30" y="13" font-size="10">22</text>
+              <text x="50" y="13" font-size="10">25</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(250,170)">
+              <rect x="0" y="0" width="60" height="26" rx="5"/>
+              <line class="btree-sep" x1="20" y1="2" x2="20" y2="24"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="24"/>
+              <text x="10" y="13" font-size="10">30</text>
+              <text x="30" y="13" font-size="10">35</text>
+              <text x="50" y="13" font-size="10">38</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(320,170)">
+              <rect x="0" y="0" width="60" height="26" rx="5"/>
+              <line class="btree-sep" x1="20" y1="2" x2="20" y2="24"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="24"/>
+              <text x="10" y="13" font-size="10">40</text>
+              <text x="30" y="13" font-size="10">42</text>
+              <text x="50" y="13" font-size="10">45</text>
+            </g>
+            <g class="btree-node leaf" transform="translate(390,170)">
+              <rect x="0" y="0" width="60" height="26" rx="5"/>
+              <line class="btree-sep" x1="20" y1="2" x2="20" y2="24"/>
+              <line class="btree-sep" x1="40" y1="2" x2="40" y2="24"/>
+              <text x="10" y="13" font-size="10">50</text>
+              <text x="30" y="13" font-size="10">55</text>
+              <text x="50" y="13" font-size="10">60</text>
+            </g>
+            <!-- 叶子链表 -->
+            <line class="leaf-link" x1="100" y1="183" x2="110" y2="183"/>
+            <line class="leaf-link" x1="170" y1="183" x2="180" y2="183"/>
+            <line class="leaf-link" x1="240" y1="183" x2="250" y2="183"/>
+            <line class="leaf-link" x1="310" y1="183" x2="320" y2="183"/>
+            <line class="leaf-link" x1="380" y1="183" x2="390" y2="183"/>
+            <text x="230" y="225" text-anchor="middle" fill="var(--warn)" font-size="12" font-weight="600">← 叶子结点通过双向链表连接 →</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 4: 为什么数据库选 B+ Tree ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">为什么数据库选 B+ Tree？</div>
+    <div class="slide-body">
+      <table>
+        <thead>
+          <tr><th>优势</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="hl">磁盘页对齐</span></td>
+            <td>每个结点正好一个磁盘页（如 16KB），一次 IO 满载</td>
+          </tr>
+          <tr>
+            <td><span class="hl">极低树高</span></td>
+            <td>3~4 层即可索引 <span class="hl-warn">千万级</span> 数据（m 很大时）</td>
+          </tr>
+          <tr>
+            <td><span class="hl">范围查询友好</span></td>
+            <td>叶子链表顺序扫描，无需回溯</td>
+          </tr>
+          <tr>
+            <td><span class="hl">IO 次数稳定</span></td>
+            <td>每次查询都走到叶子，路径长度固定</td>
+          </tr>
+          <tr>
+            <td><span class="hl">空间局部性</span></td>
+            <td>叶子顺序存储，预读友好</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="two-col" style="margin-top:16px;">
+        <div class="col-card" style="border-color:var(--accent);">
+          <h3 style="color:var(--accent);font-size:1.2rem;margin-bottom:8px;">InnoDB 索引页</h3>
+          <p>默认页大小：<code>16KB</code></p>
+          <p style="margin-top:6px;color:var(--text-dim);font-size:0.95rem;">假设主键 8B + 指针 6B，每页可存约 <span class="hl-warn">1170</span> 个键</p>
+          <div class="formula" style="margin-top:10px;">1170² ≈ 136万，1170³ ≈ 16亿</div>
+        </div>
+        <div class="col-card" style="border-color:var(--success);">
+          <h3 style="color:var(--success);font-size:1.2rem;margin-bottom:8px;">树高估算</h3>
+          <p>千万级数据：<span class="hl-success">3 层</span> B+ Tree</p>
+          <p style="margin-top:6px;color:var(--text-dim);font-size:0.95rem;">最多 <span class="hl">3 次磁盘 IO</span> 即可定位任意记录</p>
+          <p style="margin-top:6px;color:var(--text-dim);font-size:0.95rem;">根页常驻内存，实际往往只需 <span class="hl">1~2 次 IO</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 5: B+ Tree 查找示意 ===== -->
+<div class="slide" data-index="5">
+  <div class="slide-card">
+    <div class="slide-title">B+ Tree 查找示意：查找 key = 25</div>
+    <div class="anim-layout">
+      <div class="anim-tree">
+        <svg width="420" height="280" viewBox="0 0 460 300">
+          <defs>
+            <marker id="arrow-warn3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 L2,4 Z" fill="var(--warn)"/>
+            </marker>
+          </defs>
+          <!-- 根 [20, 40] -->
+          <g class="btree-node index" id="sch-root" transform="translate(190,15)">
+            <rect x="0" y="0" width="80" height="32" rx="8"/>
+            <line class="btree-sep" x1="40" y1="2" x2="40" y2="30"/>
+            <text x="20" y="16" font-size="14">20</text>
+            <text x="60" y="16" font-size="14">40</text>
+          </g>
+          <!-- 内部结点 [25, 30] -->
+          <line class="btree-edge" id="sch-edge-root-mid" x1="230" y1="47" x2="230" y2="95"/>
+          <g class="btree-node index" id="sch-mid" transform="translate(200,95)">
+            <rect x="0" y="0" width="60" height="28" rx="6"/>
+            <line class="btree-sep" x1="30" y1="2" x2="30" y2="26"/>
+            <text x="15" y="14" font-size="12">25</text>
+            <text x="45" y="14" font-size="12">30</text>
+          </g>
+          <!-- 内部结点到叶子的边 -->
+          <line class="btree-edge" x1="215" y1="123" x2="120" y2="170"/>
+          <line class="btree-edge" id="sch-edge-mid-leaf" x1="230" y1="123" x2="220" y2="170"/>
+          <line class="btree-edge" x1="245" y1="123" x2="320" y2="170"/>
+          <!-- 叶子 -->
+          <g class="btree-node leaf" transform="translate(80,170)">
+            <rect x="0" y="0" width="80" height="28" rx="6"/>
+            <line class="btree-sep" x1="26" y1="2" x2="26" y2="26"/>
+            <line class="btree-sep" x1="53" y1="2" x2="53" y2="26"/>
+            <text x="13" y="14" font-size="11">20</text>
+            <text x="39" y="14" font-size="11">22</text>
+            <text x="66" y="14" font-size="11">24</text>
+          </g>
+          <g class="btree-node leaf" id="sch-leaf" transform="translate(180,170)">
+            <rect x="0" y="0" width="80" height="28" rx="6"/>
+            <line class="btree-sep" x1="26" y1="2" x2="26" y2="26"/>
+            <line class="btree-sep" x1="53" y1="2" x2="53" y2="26"/>
+            <text x="13" y="14" font-size="11" id="sch-key-25">25</text>
+            <text x="39" y="14" font-size="11">26</text>
+            <text x="66" y="14" font-size="11">28</text>
+          </g>
+          <g class="btree-node leaf" transform="translate(280,170)">
+            <rect x="0" y="0" width="80" height="28" rx="6"/>
+            <line class="btree-sep" x1="26" y1="2" x2="26" y2="26"/>
+            <line class="btree-sep" x1="53" y1="2" x2="53" y2="26"/>
+            <text x="13" y="14" font-size="11">30</text>
+            <text x="39" y="14" font-size="11">32</text>
+            <text x="66" y="14" font-size="11">35</text>
+          </g>
+          <!-- 叶子链表 -->
+          <line class="leaf-link" x1="160" y1="184" x2="180" y2="184"/>
+          <line class="leaf-link" x1="260" y1="184" x2="280" y2="184"/>
+          <!-- 注释 -->
+          <text x="280" y="35" text-anchor="start" fill="var(--text-dim)" font-size="11">根：纯索引</text>
+          <text x="280" y="110" text-anchor="start" fill="var(--text-dim)" font-size="11">内部结点</text>
+          <text x="280" y="185" text-anchor="start" fill="var(--text-dim)" font-size="11">叶子存数据</text>
+        </svg>
+      </div>
+      <div class="anim-panel">
+        <div class="result-box">查找路径：</div>
+        <div class="viz-box"></div>
+        <div class="desc-box">点击「下一步」开始查找</div>
+        <div><button class="step-btn" id="step-btn-sch">▶ 下一步</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 6: 知识衔接总结 ===== -->
+<div class="slide" data-index="6">
+  <div class="slide-card">
+    <div class="slide-title">知识衔接总结</div>
+    <div class="slide-body">
+      <div style="text-align:center;margin-bottom:24px;">
+        <svg class="tree-svg" width="700" height="160" viewBox="0 0 700 160">
+          <!-- 演进路线 -->
+          <rect x="20" y="50" width="130" height="50" rx="10" fill="var(--bg-card)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="85" y="70" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="600">BST</text>
+          <text x="85" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="11">二叉搜索</text>
+
+          <line x1="150" y1="75" x2="190" y2="75" stroke="var(--border)" stroke-width="2"/>
+          <polygon points="190,75 182,70 182,80" fill="var(--border)"/>
+
+          <rect x="200" y="50" width="130" height="50" rx="10" fill="var(--bg-card)" stroke="var(--accent)" stroke-width="2"/>
+          <text x="265" y="70" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="600">平衡树</text>
+          <text x="265" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="11">AVL / 红黑树</text>
+
+          <line x1="330" y1="75" x2="370" y2="75" stroke="var(--border)" stroke-width="2"/>
+          <polygon points="370,75 362,70 362,80" fill="var(--border)"/>
+
+          <rect x="380" y="50" width="130" height="50" rx="10" fill="var(--bg-card)" stroke="var(--accent2)" stroke-width="2"/>
+          <text x="445" y="70" text-anchor="middle" fill="var(--accent2)" font-size="13" font-weight="600">多路平衡树</text>
+          <text x="445" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="11">B-Tree / B+ Tree</text>
+
+          <line x1="510" y1="75" x2="550" y2="75" stroke="var(--border)" stroke-width="2"/>
+          <polygon points="550,75 542,70 542,80" fill="var(--border)"/>
+
+          <rect x="560" y="50" width="130" height="50" rx="10" fill="var(--bg-card)" stroke="var(--success)" stroke-width="2"/>
+          <text x="625" y="70" text-anchor="middle" fill="var(--success)" font-size="13" font-weight="600">磁盘页优化</text>
+          <text x="625" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="11">数据库索引</text>
+
+          <!-- 底部说明 -->
+          <text x="85" y="130" text-anchor="middle" fill="var(--accent)" font-size="11">左 &lt; 根 &lt; 右</text>
+          <text x="265" y="130" text-anchor="middle" fill="var(--accent)" font-size="11">自平衡保持矮胖</text>
+          <text x="445" y="130" text-anchor="middle" fill="var(--accent2)" font-size="11">多路分支降低高度</text>
+          <text x="625" y="130" text-anchor="middle" fill="var(--success)" font-size="11">匹配磁盘块大小</text>
+        </svg>
+      </div>
+      <div class="two-col" style="align-items:start;">
+        <div>
+          <div class="slide-subtitle">核心思想演进</div>
+          <ul>
+            <li><span class="hl">二叉搜索</span> → 比较一次，排除一半</li>
+            <li><span class="hl">多路搜索</span> → 比较一次，排除多路</li>
+            <li><span class="hl">磁盘页优化</span> → IO 对齐，一次读一页</li>
+          </ul>
+        </div>
+        <div>
+          <div class="slide-subtitle">本章关键结论</div>
+          <ul>
+            <li>B+ Tree 是关系型数据库索引的<span class="hl-success">事实标准</span></li>
+            <li>所有数据在叶子 + 叶子链表 = <span class="hl">范围查询神器</span></li>
+            <li>树高 3~4 层 = <span class="hl">千万级数据仅需几次 IO</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="tip-box" style="margin-top:12px;text-align:center;">
+        <strong>一句话总结：</strong>B+ Tree 把"二分搜索"的思想扩展到"多分搜索"，并用磁盘页对齐实现了海量数据的高效索引
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 7: 作业 ===== -->
+<div class="slide" data-index="7">
+  <div class="slide-card">
+    <div class="slide-title">作业</div>
+    <div class="slide-body">
+      <div style="max-width:800px;margin:0 auto;">
+        <div class="col-card" style="margin-bottom:20px;border-color:var(--accent);">
+          <h3 style="color:var(--accent);font-size:1.3rem;margin-bottom:10px;">构建 B-Tree</h3>
+          <p>给定键值序列 <code>[10, 20, 5, 6, 12, 30, 25]</code>，依次插入构建一棵 <span class="hl">3 阶 B-Tree</span>（m = 3）。</p>
+          <p style="margin-top:8px;color:var(--text-dim);font-size:0.95rem;">要求：</p>
+          <ol style="margin-left:20px;font-size:0.95rem;">
+            <li>画出最终树形结构</li>
+            <li>标注每个结点的键值和孩子数</li>
+            <li>验证是否满足 B-Tree 的所有性质</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-container -->
+
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 12.5%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total">8</span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+/* ===================== Slide Controller ===================== */
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+})();
+
+/* ===================== Helpers ===================== */
+function updatePath(container, items) {
+  container.innerHTML = '';
+  if (items.length === 0) {
+    container.innerHTML = '<span style="color:var(--text-dim);font-size:0.9rem;">空</span>';
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;';
+  items.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg-card);border:1px solid var(--accent);border-radius:6px;padding:5px 12px;text-align:center;font-family:monospace;font-size:0.9rem;color:var(--text-main);min-width:36px;';
+    div.textContent = item;
+    wrap.appendChild(div);
+    if (idx < items.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.style.cssText = 'color:var(--text-dim);font-size:0.8rem;';
+      arrow.textContent = '→';
+      wrap.appendChild(arrow);
+    }
+  });
+  container.appendChild(wrap);
+}
+
+/* ===================== Slide 5: B+ Tree Search Dynamic ===================== */
+(function() {
+  const slide = document.querySelector('.slide[data-index="5"]');
+  const btn = slide.querySelector('.step-btn');
+  const resultBox = slide.querySelector('.result-box');
+  const descBox = slide.querySelector('.desc-box');
+  const vizBox = slide.querySelector('.viz-box');
+
+  const steps = [
+    { cur: 'root', path: ['根[20,40]'], desc: '25 ≥ 20 且 25 < 40，走中间分支', result: '当前比较：根[20,40]' },
+    { cur: 'mid', path: ['根[20,40]', '内部[25,30]'], desc: '25 ≥ 25 且 25 < 30，走中间分支到叶子', result: '当前比较：内部[25,30]' },
+    { active: 'leaf', path: ['根[20,40]', '内部[25,30]', '叶子[25,26,28]'], desc: '在叶子中找到 25 ✓', result: '查找完成：在叶子[25,26,28]中找到 25 ✓' }
+  ];
+
+  function reset() {
+    slide.dataset.step = '0';
+    slide.dataset.done = 'false';
+    btn.classList.remove('done');
+    btn.textContent = '▶ 下一步';
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    resultBox.textContent = '查找路径：';
+    descBox.textContent = '点击「下一步」开始查找';
+    vizBox.innerHTML = '';
+  }
+
+  function render(s) {
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    if (s.cur) {
+      const n = slide.querySelector('#sch-' + s.cur);
+      if (n) n.classList.add('cur-step');
+    }
+    if (s.active) {
+      const n = slide.querySelector('#sch-' + s.active);
+      if (n) n.classList.add('active-step');
+    }
+    if (s.path) updatePath(vizBox, s.path);
+    if (s.desc) descBox.textContent = s.desc;
+    if (s.result) resultBox.textContent = s.result;
+  }
+
+  btn.addEventListener('click', function() {
+    let step = parseInt(slide.dataset.step || '0');
+    const done = slide.dataset.done === 'true';
+    if (done) { reset(); return; }
+    if (step < steps.length) {
+      render(steps[step]);
+      step++;
+      slide.dataset.step = String(step);
+      if (step >= steps.length) {
+        slide.dataset.done = 'true';
+        btn.classList.add('done');
+        btn.textContent = '↺ 重来';
+      }
+    }
+  });
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (slide.classList.contains('active')) reset();
+      }
+    });
+  });
+  observer.observe(slide, { attributes: true });
+})();
+</script>
+
+</body>
+</html>

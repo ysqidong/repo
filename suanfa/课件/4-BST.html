@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树（Tree）数据结构 — 第四章：二叉搜索树 BST</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0f172a;
+    --bg-slide: #1e293b;
+    --bg-card: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #e2e8f0;
+    --success: #4ade80;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+  }
+
+  /* ===== Slide Container ===== */
+  #slides-container {
+    position: relative;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 60px 100px 60px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  /* ===== Slide Content Card ===== */
+  .slide-card {
+    background: var(--bg-slide);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 160px);
+    padding: 20px 30px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ===== Typography ===== */
+  .slide-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+
+  .slide-subtitle {
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .slide-body {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-bright);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== Lists ===== */
+  .slide-body ul, .slide-body ol {
+    margin-left: 28px;
+    margin-bottom: 16px;
+  }
+
+  .slide-body li {
+    margin-bottom: 8px;
+  }
+
+  .slide-body li::marker {
+    color: var(--accent);
+  }
+
+  /* ===== Highlight ===== */
+  .hl { color: var(--accent); font-weight: 600; }
+  .hl2 { color: var(--accent2); font-weight: 600; }
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+  .hl-danger { color: var(--danger); font-weight: 600; }
+
+  /* ===== Code / Mono ===== */
+  code, .mono {
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: var(--accent);
+  }
+
+  .code-block {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 10px 0;
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-bright);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* Syntax highlighting colors */
+  .syn-kw { color: #c084fc; font-weight: 600; }
+  .syn-str { color: #4ade80; }
+  .syn-cmt { color: #64748b; }
+  .syn-num { color: #fb923c; }
+  .syn-func { color: #60a5fa; }
+  .syn-cls { color: #fbbf24; }
+  .syn-blt { color: #22d3ee; }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 1rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  th {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  tr:hover {
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  /* ===== Tree SVG ===== */
+  .tree-svg {
+    display: block;
+    margin: 8px auto;
+    max-width: 100%;
+  }
+
+  .tree-node circle {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  .tree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 14px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .tree-node.leaf circle {
+    stroke: var(--success);
+  }
+
+  .tree-node.danger circle {
+    stroke: var(--danger);
+    stroke-width: 3;
+    fill: rgba(248, 113, 113, 0.12);
+  }
+
+  .tree-node.highlight circle {
+    stroke: var(--warn);
+    stroke-width: 3.5;
+    fill: rgba(251, 191, 36, 0.15);
+  }
+
+  /* Active step (gold highlight) */
+  .tree-node.active-step circle {
+    stroke: var(--warn) !important;
+    stroke-width: 3.5 !important;
+    fill: rgba(251, 191, 36, 0.2) !important;
+  }
+  .tree-node.active-step text {
+    fill: var(--warn) !important;
+    font-weight: 700;
+  }
+
+  /* Cur step (blue dashed) */
+  .tree-node.cur-step circle {
+    stroke: var(--accent) !important;
+    stroke-width: 3 !important;
+    stroke-dasharray: 4, 3;
+  }
+  .tree-node.cur-step text {
+    fill: var(--accent) !important;
+    font-weight: 700;
+  }
+
+  /* Inserted node style (green) */
+  .tree-node.inserted circle {
+    stroke: var(--success) !important;
+    stroke-width: 3.5 !important;
+    fill: rgba(74, 222, 128, 0.2) !important;
+  }
+  .tree-node.inserted text {
+    fill: var(--success) !important;
+    font-weight: 700;
+  }
+
+  /* ===== Anim Layout (dynamic slides) ===== */
+  .anim-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .anim-tree {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+
+  .anim-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .result-box {
+    min-height: 36px;
+    font-family: "Fira Code", Consolas, monospace;
+    font-size: 1.05rem;
+    color: var(--warn);
+    font-weight: 700;
+    background: rgba(0,0,0,0.15);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .viz-box {
+    min-height: 80px;
+    background: rgba(0,0,0,0.1);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .desc-box {
+    min-height: 30px;
+    color: var(--text-dim);
+    font-size: 1rem;
+    padding: 4px 0;
+  }
+
+  /* ===== Step Controls ===== */
+  .step-btn {
+    min-width: 120px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--bg-deep);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .step-btn:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .step-btn.done {
+    background: transparent;
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  /* ===== Two / Three Column Layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .col-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 18px;
+  }
+
+  /* ===== Tip / Note Box ===== */
+  .tip-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 12px 18px;
+    border-radius: 0 12px 12px 0;
+    margin: 12px 0;
+    font-size: 1.05rem;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ===== Math / Formula ===== */
+  .formula {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 1.1rem;
+    margin: 12px 0;
+    font-family: "Fira Code", Consolas, monospace;
+  }
+
+  /* ===== Controls ===== */
+  #controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+    padding: 0 40px;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+
+  .ctrl-btn svg {
+    width: 18px; height: 18px;
+    fill: currentColor;
+  }
+
+  #page-indicator {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #page-indicator .current {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  /* ===== Progress Bar ===== */
+  #progress-bar {
+    position: fixed;
+    bottom: 80px; left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Key hint ===== */
+  .key-hint {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    z-index: 90;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1100px) {
+    .slide { padding: 40px 30px 100px 30px; }
+    .slide-card { padding: 20px 26px; }
+    .slide-title { font-size: 1.8rem; }
+    .slide-body { font-size: 1.05rem; }
+    .two-col { grid-template-columns: 1fr; }
+    .three-col { grid-template-columns: 1fr; }
+    .anim-layout { flex-direction: column; align-items: center; }
+    .anim-panel { width: 100%; }
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 20px 16px 100px 16px; }
+    .slide-card { padding: 16px 18px; }
+    .slide-title { font-size: 1.6rem; margin-bottom: 12px; }
+    .slide-body { font-size: 1rem; }
+    .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; }
+    table { font-size: 0.95rem; }
+    th, td { padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== SLIDES ======================== -->
+<div id="slides-container">
+
+<!-- ===== Slide 0: 标题页 ===== -->
+<div class="slide" data-index="0">
+  <div class="slide-card" style="justify-content:center;align-items:center;text-align:center;">
+    <div style="font-size:1.2rem;color:var(--text-dim);margin-bottom:20px;">树（Tree）数据结构</div>
+    <div class="slide-title" style="font-size:3rem;margin-bottom:30px;">第四章 二叉搜索树 BST</div>
+    <div style="font-size:1.3rem;color:var(--accent2);margin-bottom:40px;">Binary Search Tree</div>
+    <svg class="tree-svg" width="360" height="220" viewBox="0 0 360 220">
+      <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+      <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+      <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+      <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+      <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+      <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+      <g class="tree-node" transform="translate(180,35)"><circle r="20"/><text font-size="15">50</text></g>
+      <g class="tree-node" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+      <g class="tree-node" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+      <g class="tree-node leaf" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+      <g class="tree-node leaf" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+      <g class="tree-node leaf" transform="translate(225,165)"><circle r="16"/><text font-size="13">60</text></g>
+      <g class="tree-node leaf" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+      <text x="50" y="70" text-anchor="middle" fill="var(--accent)" font-size="12">&lt; 50</text>
+      <text x="310" y="70" text-anchor="middle" fill="var(--accent2)" font-size="12">&gt; 50</text>
+    </svg>
+    <div style="color:var(--text-dim);margin-top:16px;font-size:1rem;">左 &lt; 根 &lt; 右 ｜ 查找 · 插入 · 删除</div>
+  </div>
+</div>
+
+<!-- ===== Slide 1: 定义与性质 ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">二叉搜索树的定义与性质</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:center;">
+        <div>
+          <div class="slide-subtitle">定义</div>
+          <ul>
+            <li>左子树<span class="hl">所有</span>结点值 <span class="hl">&lt;</span> 根值</li>
+            <li>右子树<span class="hl">所有</span>结点值 <span class="hl">&gt;</span> 根值</li>
+            <li>左右子树本身也是 <span class="hl2">BST</span></li>
+          </ul>
+
+          <div class="slide-subtitle" style="margin-top:20px;">核心性质</div>
+          <div class="col-card" style="border-color:var(--success);margin-bottom:12px;">
+            <p><span class="hl-success">中序遍历 BST</span></p>
+            <p style="margin-top:6px;">得到<span class="hl-success">严格递增</span>的有序序列</p>
+          </div>
+          <div class="tip-box">
+            <strong>注意：</strong>是<span class="hl">所有</span>左子树结点都小于根，不只是直接左孩子！
+          </div>
+
+          <div class="slide-subtitle" style="margin-top:16px;">本课统一示例树</div>
+          <div class="formula">中序: 20 → 30 → 40 → 50 → 60 → 70 → 80</div>
+        </div>
+        <div style="text-align:center;">
+          <svg class="tree-svg" width="360" height="260" viewBox="0 0 360 260">
+            <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+            <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+            <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+            <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+            <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+            <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+            <g class="tree-node" transform="translate(180,35)"><circle r="20"/><text font-size="15">50</text></g>
+            <g class="tree-node" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+            <g class="tree-node" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+            <g class="tree-node leaf" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+            <g class="tree-node leaf" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+            <g class="tree-node leaf" transform="translate(225,165)"><circle r="16"/><text font-size="13">60</text></g>
+            <g class="tree-node leaf" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+            <text x="135" y="62" text-anchor="middle" fill="var(--accent)" font-size="11">&lt; 50</text>
+            <text x="225" y="62" text-anchor="middle" fill="var(--accent2)" font-size="11">&gt; 50</text>
+            <text x="67" y="128" text-anchor="middle" fill="var(--accent)" font-size="10">&lt; 30</text>
+            <text x="113" y="128" text-anchor="middle" fill="var(--accent2)" font-size="10">&gt; 30</text>
+            <text x="247" y="128" text-anchor="middle" fill="var(--accent)" font-size="10">&lt; 70</text>
+            <text x="293" y="128" text-anchor="middle" fill="var(--accent2)" font-size="10">&gt; 70</text>
+            <text x="180" y="230" text-anchor="middle" fill="var(--success)" font-size="13" font-weight="600">20 &lt; 30 &lt; 40 &lt; 50 &lt; 60 &lt; 70 &lt; 80</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 2: 查找操作 ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">查找操作 Search</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:start;">
+        <div>
+          <div class="slide-subtitle">查找逻辑</div>
+          <ul>
+            <li>从<span class="hl">根</span>开始比较</li>
+            <li>目标值 <span class="hl">&lt;</span> 当前结点 → 往<span class="hl">左</span>走</li>
+            <li>目标值 <span class="hl">&gt;</span> 当前结点 → 往<span class="hl">右</span>走</li>
+            <li>相等 → <span class="hl-success">找到</span></li>
+            <li>走到空 → <span class="hl-danger">不存在</span></li>
+          </ul>
+          <div class="tip-box">
+            <strong>本质：</strong>二分搜索思想在树结构上的延伸
+          </div>
+          <div class="col-card" style="margin-top:12px;">
+            <p>查找 <span class="hl-warn">40</span> 的路径：</p>
+            <p style="margin-top:6px;color:var(--text-dim);">50 → 30 → 40</p>
+            <p style="margin-top:4px;color:var(--text-dim);">比较 <span class="hl">3</span> 次找到</p>
+          </div>
+        </div>
+        <div>
+          <div class="code-block"><span class="syn-kw">def</span> <span class="syn-func">search</span>(root, target):
+    <span class="syn-kw">if not</span> root:
+        <span class="syn-kw">return</span> <span class="syn-kw">None</span>
+    <span class="syn-kw">if</span> target == root.val:
+        <span class="syn-kw">return</span> root
+    <span class="syn-kw">if</span> target &lt; root.val:
+        <span class="syn-kw">return</span> search(root.left, target)
+    <span class="syn-kw">return</span> search(root.right, target)</div>
+          <div style="text-align:center;margin-top:12px;">
+            <svg class="tree-svg" width="300" height="200" viewBox="0 0 360 260">
+              <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+              <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+              <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+              <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+              <g class="tree-node" transform="translate(180,35)"><circle r="20"/><text font-size="15">50</text></g>
+              <g class="tree-node" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+              <g class="tree-node" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+              <g class="tree-node leaf" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+              <g class="tree-node leaf" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+              <g class="tree-node leaf" transform="translate(225,165)"><circle r="16"/><text font-size="13">60</text></g>
+              <g class="tree-node leaf" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 3: 查找案例（动态） ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">查找案例：查找 40</div>
+    <div class="anim-layout">
+      <div class="anim-tree">
+        <svg width="340" height="250" viewBox="0 0 360 260">
+          <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+          <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+          <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+          <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+          <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+          <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+          <g class="tree-node" id="sch-node-50" transform="translate(180,35)"><circle r="20"/><text font-size="15">50</text></g>
+          <g class="tree-node" id="sch-node-30" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+          <g class="tree-node" id="sch-node-70" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+          <g class="tree-node leaf" id="sch-node-20" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+          <g class="tree-node leaf" id="sch-node-40" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+          <g class="tree-node leaf" id="sch-node-60" transform="translate(225,165)"><circle r="16"/><text font-size="13">60</text></g>
+          <g class="tree-node leaf" id="sch-node-80" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+        </svg>
+      </div>
+      <div class="anim-panel">
+        <div class="result-box">查找路径：</div>
+        <div class="viz-box"></div>
+        <div class="desc-box">点击「下一步」开始查找</div>
+        <div><button class="step-btn" id="step-btn-sch">▶ 下一步</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 4: 插入操作 ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">插入操作 Insert</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:start;">
+        <div>
+          <div class="slide-subtitle">插入逻辑</div>
+          <ul>
+            <li>从根开始，按<span class="hl">查找</span>规则往下走</li>
+            <li>走到<span class="hl2">空位置</span>，就是插入点</li>
+            <li>新结点总是作为<span class="hl-success">叶子</span>插入</li>
+          </ul>
+          <div class="tip-box">
+            <strong>关键：</strong>插入不会破坏 BST 性质，因为新结点总是挂在正确的一侧
+          </div>
+          <div class="col-card" style="margin-top:12px;">
+            <p>插入 <span class="hl-warn">65</span> 的路径：</p>
+            <p style="margin-top:6px;color:var(--text-dim);">50 → 70 → 60 → (右空位)</p>
+          </div>
+        </div>
+        <div>
+          <div class="code-block"><span class="syn-kw">def</span> <span class="syn-func">insert</span>(root, val):
+    <span class="syn-kw">if not</span> root:
+        <span class="syn-kw">return</span> TreeNode(val)
+    <span class="syn-kw">if</span> val &lt; root.val:
+        root.left = insert(root.left, val)
+    <span class="syn-kw">elif</span> val &gt; root.val:
+        root.right = insert(root.right, val)
+    <span class="syn-kw">return</span> root</div>
+          <div style="text-align:center;margin-top:12px;">
+            <svg class="tree-svg" width="300" height="200" viewBox="0 0 360 260">
+              <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+              <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+              <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+              <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+              <g class="tree-node" transform="translate(180,35)"><circle r="20"/><text font-size="15">50</text></g>
+              <g class="tree-node" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+              <g class="tree-node" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+              <g class="tree-node leaf" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+              <g class="tree-node leaf" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+              <g class="tree-node leaf" transform="translate(225,165)"><circle r="16"/><text font-size="13">60</text></g>
+              <g class="tree-node leaf" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 5: 插入案例（动态） ===== -->
+<div class="slide" data-index="5">
+  <div class="slide-card">
+    <div class="slide-title">插入案例：插入 65</div>
+    <div class="anim-layout">
+      <div class="anim-tree">
+        <svg width="340" height="280" viewBox="0 0 380 290">
+          <line class="tree-edge" x1="190" y1="35" x2="95" y2="100"/>
+          <line class="tree-edge" x1="190" y1="35" x2="285" y2="100"/>
+          <line class="tree-edge" x1="95" y1="100" x2="47" y2="165"/>
+          <line class="tree-edge" x1="95" y1="100" x2="143" y2="165"/>
+          <line class="tree-edge" x1="285" y1="100" x2="237" y2="165"/>
+          <line class="tree-edge" x1="285" y1="100" x2="333" y2="165"/>
+          <line class="tree-edge" id="ins-edge-new" x1="237" y1="165" x2="285" y2="230" style="opacity:0;"/>
+          <g class="tree-node" id="ins-node-50" transform="translate(190,35)"><circle r="20"/><text font-size="15">50</text></g>
+          <g class="tree-node" id="ins-node-30" transform="translate(95,100)"><circle r="18"/><text font-size="14">30</text></g>
+          <g class="tree-node" id="ins-node-70" transform="translate(285,100)"><circle r="18"/><text font-size="14">70</text></g>
+          <g class="tree-node leaf" id="ins-node-20" transform="translate(47,165)"><circle r="16"/><text font-size="13">20</text></g>
+          <g class="tree-node leaf" id="ins-node-40" transform="translate(143,165)"><circle r="16"/><text font-size="13">40</text></g>
+          <g class="tree-node leaf" id="ins-node-60" transform="translate(237,165)"><circle r="16"/><text font-size="13">60</text></g>
+          <g class="tree-node leaf" id="ins-node-80" transform="translate(333,165)"><circle r="16"/><text font-size="13">80</text></g>
+          <g class="tree-node inserted" id="ins-node-65" transform="translate(285,230)" style="opacity:0;"><circle r="16"/><text font-size="13">65</text></g>
+        </svg>
+      </div>
+      <div class="anim-panel">
+        <div class="result-box">查找路径：</div>
+        <div class="viz-box"></div>
+        <div class="desc-box">点击「下一步」开始插入</div>
+        <div><button class="step-btn" id="step-btn-ins">▶ 下一步</button></div>
+      </div>
+    </div>
+    <div>如果插入的数字已经存在呢？</div>
+  </div>
+</div>
+
+<!-- ===== Slide 6: 删除 — 叶子结点 ===== -->
+<div class="slide" data-index="6">
+  <div class="slide-card">
+    <div class="slide-title">删除 — 叶子结点</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:center;">
+        <div>
+          <div class="slide-subtitle">场景</div>
+          <p>待删除结点是<span class="hl-success">叶子</span>（没有孩子）</p>
+
+          <div class="slide-subtitle" style="margin-top:20px;">操作</div>
+          <ul>
+            <li>直接<span class="hl-danger">删除</span>该结点</li>
+            <li>父结点的对应指针<span class="hl">置空</span></li>
+          </ul>
+
+          <div class="slide-subtitle" style="margin-top:20px;">示例</div>
+          <p>删除叶子 <span class="hl-warn">20</span></p>
+          <p style="color:var(--text-dim);margin-top:6px;">30 的左指针由指向 20 变为 None</p>
+
+          <div class="col-card" style="margin-top:16px;border-color:var(--success);">
+            <p><span class="hl-success">最简单</span>的删除情况</p>
+            <p style="font-size:0.95rem;color:var(--text-dim);margin-top:4px;">时间复杂度：O(log n) ~ O(n)</p>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--text-dim);margin-bottom:8px;">删除前 → 删除后</p>
+          <svg class="tree-svg" width="420" height="220" viewBox="0 0 420 220">
+            <!-- Before tree -->
+            <text x="105" y="18" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="600">删除前</text>
+            <line class="tree-edge" x1="105" y1="35" x2="52" y2="100"/>
+            <line class="tree-edge" x1="105" y1="35" x2="158" y2="100"/>
+            <g class="tree-node" transform="translate(105,35)"><circle r="18"/><text font-size="14">30</text></g>
+            <g class="tree-node leaf danger" transform="translate(52,100)"><circle r="16"/><text font-size="13">20</text></g>
+            <g class="tree-node leaf" transform="translate(158,100)"><circle r="16"/><text font-size="13">40</text></g>
+            <text x="105" y="140" text-anchor="middle" fill="var(--danger)" font-size="12">叶子 20 将被删除</text>
+
+            <!-- Arrow -->
+            <text x="210" y="85" text-anchor="middle" fill="var(--accent2)" font-size="24">→</text>
+
+            <!-- After tree -->
+            <text x="315" y="18" text-anchor="middle" fill="var(--success)" font-size="13" font-weight="600">删除后</text>
+            <line class="tree-edge" x1="315" y1="35" x2="315" y2="100" style="stroke:var(--border);stroke-dasharray:5,3;"/>
+            <line class="tree-edge" x1="315" y1="35" x2="368" y2="100"/>
+            <g class="tree-node" transform="translate(315,35)"><circle r="18"/><text font-size="14">30</text></g>
+            <g class="tree-node leaf" transform="translate(368,100)"><circle r="16"/><text font-size="13">40</text></g>
+            <text x="315" y="135" text-anchor="middle" fill="var(--text-dim)" font-size="12">左指针置空</text>
+            <text x="315" y="170" text-anchor="middle" fill="var(--success)" font-size="12">✓ 20 已被删除</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 7: 删除 — 只有一个孩子 ===== -->
+<div class="slide" data-index="7">
+  <div class="slide-card">
+    <div class="slide-title">删除 — 只有一个孩子</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:center;">
+        <div>
+          <div class="slide-subtitle">场景</div>
+          <p>待删除结点只有<span class="hl">一个</span>孩子（左或右）</p>
+
+          <div class="slide-subtitle" style="margin-top:20px;">操作</div>
+          <ul>
+            <li>用<span class="hl2">孩子顶替</span>被删除结点的位置</li>
+            <li>父结点直接指向孩子，跳过被删结点</li>
+          </ul>
+
+          <div class="slide-subtitle" style="margin-top:20px;">示例</div>
+          <p>删除 <span class="hl-warn">70</span>（只有一个左孩子 60）</p>
+          <p style="color:var(--text-dim);margin-top:6px;">50 的右指针由指向 70 变为指向 60</p>
+
+          <div class="tip-box" style="margin-top:16px;">
+            <strong>形象理解：</strong>就像链表删除中间结点，让孩子“继承”位置
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--text-dim);margin-bottom:8px;">删除前 → 删除后</p>
+          <svg class="tree-svg" width="420" height="240" viewBox="0 0 420 240">
+            <!-- Before tree -->
+            <text x="105" y="18" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="600">删除前</text>
+            <line class="tree-edge" x1="105" y1="35" x2="52" y2="100"/>
+            <line class="tree-edge" x1="105" y1="35" x2="158" y2="100"/>
+            <line class="tree-edge" x1="158" y1="100" x2="131" y2="165"/>
+            <g class="tree-node" transform="translate(105,35)"><circle r="18"/><text font-size="14">50</text></g>
+            <g class="tree-node leaf" transform="translate(52,100)"><circle r="16"/><text font-size="13">30</text></g>
+            <g class="tree-node danger" transform="translate(158,100)"><circle r="16"/><text font-size="13">70</text></g>
+            <g class="tree-node leaf" transform="translate(131,165)"><circle r="14"/><text font-size="12">60</text></g>
+            <text x="105" y="200" text-anchor="middle" fill="var(--danger)" font-size="12">70 只有一个左孩子 60</text>
+
+            <!-- Arrow -->
+            <text x="210" y="110" text-anchor="middle" fill="var(--accent2)" font-size="24">→</text>
+
+            <!-- After tree -->
+            <text x="315" y="18" text-anchor="middle" fill="var(--success)" font-size="13" font-weight="600">删除后</text>
+            <line class="tree-edge" x1="315" y1="35" x2="262" y2="100"/>
+            <line class="tree-edge" x1="315" y1="35" x2="368" y2="100"/>
+            <g class="tree-node" transform="translate(315,35)"><circle r="18"/><text font-size="14">50</text></g>
+            <g class="tree-node leaf" transform="translate(262,100)"><circle r="16"/><text font-size="13">30</text></g>
+            <g class="tree-node leaf" transform="translate(368,100)"><circle r="16"/><text font-size="13">60</text></g>
+            <text x="315" y="200" text-anchor="middle" fill="var(--success)" font-size="12">✓ 60 顶替了 70 的位置</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 8: 删除 — 两个孩子 ===== -->
+<div class="slide" data-index="8">
+  <div class="slide-card">
+    <div class="slide-title">删除 — 有两个孩子</div>
+    <div class="slide-body">
+      <p style="margin-bottom:12px;text-align:center;">最复杂的情况：用<span class="hl">中序前驱</span>或<span class="hl2">中序后继</span>替换被删结点</p>
+      <div class="two-col" style="align-items:start;gap:20px;">
+        <div class="col-card" style="border-color:var(--accent);">
+          <h3 style="color:var(--accent);font-size:1.3rem;margin-bottom:10px;">中序前驱 Predecessor</h3>
+          <p>定义：<span class="hl">左子树的最右结点</span></p>
+          <p style="color:var(--text-dim);margin-top:4px;font-size:0.95rem;">即左子树中值最大的结点</p>
+          <div style="text-align:center;margin-top:10px;">
+            <svg class="tree-svg" width="200" height="160" viewBox="0 0 200 160">
+              <line class="tree-edge" x1="100" y1="30" x2="50" y2="80"/>
+              <line class="tree-edge" x1="100" y1="30" x2="150" y2="80"/>
+              <line class="tree-edge" x1="50" y1="80" x2="25" y2="130"/>
+              <line class="tree-edge" x1="50" y1="80" x2="75" y2="130"/>
+              <g class="tree-node" transform="translate(100,30)"><circle r="16"/><text font-size="13">50</text></g>
+              <g class="tree-node" transform="translate(50,80)"><circle r="14"/><text font-size="12">30</text></g>
+              <g class="tree-node leaf" transform="translate(150,80)"><circle r="14"/><text font-size="12">70</text></g>
+              <g class="tree-node leaf" transform="translate(25,130)"><circle r="12"/><text font-size="11">20</text></g>
+              <g class="tree-node leaf highlight" transform="translate(75,130)"><circle r="12"/><text font-size="11">40</text></g>
+              <text x="100" y="155" text-anchor="middle" fill="var(--accent)" font-size="11">前驱 = 左子树最右 = 40</text>
+            </svg>
+          </div>
+        </div>
+        <div class="col-card" style="border-color:var(--accent2);">
+          <h3 style="color:var(--accent2);font-size:1.3rem;margin-bottom:10px;">中序后继 Successor</h3>
+          <p>定义：<span class="hl2">右子树的最左结点</span></p>
+          <p style="color:var(--text-dim);margin-top:4px;font-size:0.95rem;">即右子树中值最小的结点</p>
+          <div style="text-align:center;margin-top:10px;">
+            <svg class="tree-svg" width="200" height="160" viewBox="0 0 200 160">
+              <line class="tree-edge" x1="100" y1="30" x2="50" y2="80"/>
+              <line class="tree-edge" x1="100" y1="30" x2="150" y2="80"/>
+              <line class="tree-edge" x1="150" y1="80" x2="125" y2="130"/>
+              <line class="tree-edge" x1="150" y1="80" x2="175" y2="130"/>
+              <g class="tree-node" transform="translate(100,30)"><circle r="16"/><text font-size="13">50</text></g>
+              <g class="tree-node leaf" transform="translate(50,80)"><circle r="14"/><text font-size="12">30</text></g>
+              <g class="tree-node" transform="translate(150,80)"><circle r="14"/><text font-size="12">70</text></g>
+              <g class="tree-node leaf highlight" transform="translate(125,130)"><circle r="12"/><text font-size="11">60</text></g>
+              <g class="tree-node leaf" transform="translate(175,130)"><circle r="12"/><text font-size="11">80</text></g>
+              <text x="100" y="155" text-anchor="middle" fill="var(--accent2)" font-size="11">后继 = 右子树最左 = 60</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="col-card" style="margin-top:12px;text-align:center;">
+        <p><span class="hl">替换策略：</span>用前驱/后继的值覆盖被删结点，然后递归删除那个前驱/后继（它最多只有一个孩子）</p>
+      </div>
+      <p style="text-align:center;margin:14px 0 10px;font-weight:600;color:var(--text-bright);">原始 BST 中删除根结点 <span class="hl-warn">50</span>，两种策略的结果：</p>
+      <div class="two-col" style="align-items:start;gap:20px;">
+        <div class="col-card" style="border-color:var(--accent);">
+          <h3 style="color:var(--accent);font-size:1.3rem;margin-bottom:10px;text-align:center;">策略一：中序前驱 40</h3>
+          <p style="text-align:center;font-size:0.95rem;color:var(--text-dim);margin-bottom:8px;">40 替换 50，再删除原 40</p>
+          <div style="text-align:center;">
+            <svg class="tree-svg" width="280" height="220" viewBox="0 0 360 260">
+              <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+              <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+              <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+              <g class="tree-node" transform="translate(180,35)"><circle r="20"/><text font-size="15">40</text></g>
+              <g class="tree-node" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+              <g class="tree-node" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+              <g class="tree-node leaf" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+              <g class="tree-node leaf" transform="translate(225,165)"><circle r="16"/><text font-size="13">60</text></g>
+              <g class="tree-node leaf" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+              <text x="180" y="225" text-anchor="middle" fill="var(--accent)" font-size="12">中序: 20 → 30 → 40 → 60 → 70 → 80</text>
+            </svg>
+          </div>
+        </div>
+        <div class="col-card" style="border-color:var(--accent2);">
+          <h3 style="color:var(--accent2);font-size:1.3rem;margin-bottom:10px;text-align:center;">策略二：中序后继 60</h3>
+          <p style="text-align:center;font-size:0.95rem;color:var(--text-dim);margin-bottom:8px;">60 替换 50，再删除原 60</p>
+          <div style="text-align:center;">
+            <svg class="tree-svg" width="280" height="220" viewBox="0 0 360 260">
+              <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+              <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+              <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+              <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+              <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+              <g class="tree-node" transform="translate(180,35)"><circle r="20"/><text font-size="15">60</text></g>
+              <g class="tree-node" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+              <g class="tree-node" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+              <g class="tree-node leaf" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+              <g class="tree-node leaf" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+              <g class="tree-node leaf" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+              <text x="180" y="225" text-anchor="middle" fill="var(--accent2)" font-size="12">中序: 20 → 30 → 40 → 60 → 70 → 80</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="tip-box" style="margin-top:14px;text-align:center;">
+        <strong>两种策略都正确！</strong> 选择任意一种即可，保证中序遍历结果仍然有序
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 9: 删除案例（动态） ===== -->
+<div class="slide" data-index="9">
+  <div class="slide-card">
+    <div class="slide-title">删除案例：删除 50（后继策略）</div>
+    <div class="anim-layout">
+      <div class="anim-tree">
+        <svg width="340" height="250" viewBox="0 0 360 260">
+          <line class="tree-edge" x1="180" y1="35" x2="90" y2="100"/>
+          <line class="tree-edge" x1="180" y1="35" x2="270" y2="100"/>
+          <line class="tree-edge" x1="90" y1="100" x2="45" y2="165"/>
+          <line class="tree-edge" x1="90" y1="100" x2="135" y2="165"/>
+          <line class="tree-edge" x1="270" y1="100" x2="225" y2="165"/>
+          <line class="tree-edge" x1="270" y1="100" x2="315" y2="165"/>
+          <g class="tree-node" id="del-node-50" transform="translate(180,35)"><circle r="20"/><text font-size="15" id="del-text-50">50</text></g>
+          <g class="tree-node" id="del-node-30" transform="translate(90,100)"><circle r="18"/><text font-size="14">30</text></g>
+          <g class="tree-node" id="del-node-70" transform="translate(270,100)"><circle r="18"/><text font-size="14">70</text></g>
+          <g class="tree-node leaf" id="del-node-20" transform="translate(45,165)"><circle r="16"/><text font-size="13">20</text></g>
+          <g class="tree-node leaf" id="del-node-40" transform="translate(135,165)"><circle r="16"/><text font-size="13">40</text></g>
+          <g class="tree-node leaf" id="del-node-60" transform="translate(225,165)"><circle r="16"/><text font-size="13" id="del-text-60">60</text></g>
+          <g class="tree-node leaf" id="del-node-80" transform="translate(315,165)"><circle r="16"/><text font-size="13">80</text></g>
+        </svg>
+      </div>
+      <div class="anim-panel">
+        <div class="result-box">操作记录：</div>
+        <div class="viz-box"></div>
+        <div class="desc-box">点击「下一步」开始删除</div>
+        <div><button class="step-btn" id="step-btn-del">▶ 下一步</button></div>
+      </div>
+    </div>
+    <div>能交替使用前驱和后继策略吗？</div>
+  </div>
+</div>
+
+<!-- ===== Slide 10: 时间复杂度分析 ===== -->
+<div class="slide" data-index="10">
+  <div class="slide-card">
+    <div class="slide-title">时间复杂度分析</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:start;">
+        <div>
+          <table>
+            <thead>
+              <tr><th>情况</th><th>查找</th><th>插入</th><th>删除</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="hl-success">平均（平衡）</span></td>
+                <td>O(log n)</td>
+                <td>O(log n)</td>
+                <td>O(log n)</td>
+              </tr>
+              <tr>
+                <td><span class="hl-danger">最坏（退化）</span></td>
+                <td>O(n)</td>
+                <td>O(n)</td>
+                <td>O(n)</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="tip-box" style="margin-top:14px;">
+            <strong>最坏情况：</strong>插入有序数据时，BST 退化成<span class="hl-danger">链表</span>
+          </div>
+          <div class="col-card" style="margin-top:14px;">
+            <p><span class="hl">解决方案：</span>引入<span class="hl2">平衡机制</span></p>
+            <p style="margin-top:6px;color:var(--text-dim);">AVL 树、红黑树等自平衡 BST，保证 O(log n)</p>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--danger);font-weight:700;margin-bottom:8px;">退化成链表示意</p>
+          <svg class="tree-svg" width="420" height="240" viewBox="0 0 420 240">
+            <!-- 斜向排列的右偏链 -->
+            <line class="tree-edge" x1="60" y1="40" x2="120" y2="90"/>
+            <line class="tree-edge" x1="120" y1="90" x2="180" y2="140"/>
+            <line class="tree-edge" x1="180" y1="140" x2="240" y2="190"/>
+            <line class="tree-edge" x1="240" y1="190" x2="300" y2="220"/>
+
+            <g class="tree-node" transform="translate(60,40)"><circle r="18"/><text font-size="14">10</text></g>
+            <g class="tree-node" transform="translate(120,90)"><circle r="18"/><text font-size="14">20</text></g>
+            <g class="tree-node" transform="translate(180,140)"><circle r="18"/><text font-size="14">30</text></g>
+            <g class="tree-node" transform="translate(240,190)"><circle r="18"/><text font-size="14">40</text></g>
+            <g class="tree-node" transform="translate(300,220)"><circle r="18"/><text font-size="14">50</text></g>
+
+            <text x="100" y="55" fill="var(--accent)" font-size="12">右孩子</text>
+            <text x="160" y="105" fill="var(--accent)" font-size="12">右孩子</text>
+            <text x="220" y="155" fill="var(--accent)" font-size="12">右孩子</text>
+            <text x="280" y="195" fill="var(--accent)" font-size="12">右孩子</text>
+
+            <text x="180" y="235" text-anchor="middle" fill="var(--danger)" font-size="13" font-weight="600">树高 = n，操作降至 O(n)</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 11: 作业 ===== -->
+<div class="slide" data-index="11">
+  <div class="slide-card">
+    <div class="slide-title">作业</div>
+    <div class="slide-body">
+      <div style="max-width:800px;margin:0 auto;">
+        <div class="col-card" style="margin-bottom:20px;border-color:var(--accent);">
+          <h3 style="color:var(--accent);font-size:1.3rem;margin-bottom:10px;">题 1：构建 BST</h3>
+          <p>从空树开始，依次插入序列 <code>[50, 30, 70, 20, 40, 60, 80]</code>，画出最终 BST。</p>
+        </div>
+        <div class="col-card" style="border-color:var(--accent2);">
+          <h3 style="color:var(--accent2);font-size:1.3rem;margin-bottom:10px;">题 2：删除根结点</h3>
+          <p>删除上题中的根结点 <code>50</code>，分别用 <span class="hl">"中序前驱"</span> 和 <span class="hl2">"中序后继"</span> 两种策略，画出结果。</p>
+        </div>
+        <div class="tip-box" style="margin-top:20px;text-align:center;">
+          <strong>注意：</strong>两种删除节点的方法能混用吗？
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-container -->
+
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 7.69%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total">12</span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+/* ===================== Slide Controller ===================== */
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+})();
+
+/* ===================== Helpers ===================== */
+function updatePath(container, items) {
+  container.innerHTML = '';
+  if (items.length === 0) {
+    container.innerHTML = '<span style="color:var(--text-dim);font-size:0.9rem;">空</span>';
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;';
+  items.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg-card);border:1px solid var(--accent);border-radius:6px;padding:5px 12px;text-align:center;font-family:monospace;font-size:0.9rem;color:var(--text-main);min-width:36px;';
+    div.textContent = item;
+    wrap.appendChild(div);
+    if (idx < items.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.style.cssText = 'color:var(--text-dim);font-size:0.8rem;';
+      arrow.textContent = '→';
+      wrap.appendChild(arrow);
+    }
+  });
+  container.appendChild(wrap);
+}
+
+/* ===================== Slide 3: Search Dynamic ===================== */
+(function() {
+  const slide = document.querySelector('.slide[data-index="3"]');
+  const btn = slide.querySelector('.step-btn');
+  const resultBox = slide.querySelector('.result-box');
+  const descBox = slide.querySelector('.desc-box');
+  const vizBox = slide.querySelector('.viz-box');
+
+  const steps = [
+    { cur: '50', path: ['50'], desc: '从根开始：40 < 50，向左走' },
+    { cur: '30', path: ['50','30'], desc: '40 > 30，向右走' },
+    { active: '40', path: ['50','30','40'], desc: '40 == 40，找到目标！' }
+  ];
+
+  function reset() {
+    slide.dataset.step = '0';
+    slide.dataset.done = 'false';
+    btn.classList.remove('done');
+    btn.textContent = '▶ 下一步';
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    resultBox.textContent = '查找路径：';
+    descBox.textContent = '点击「下一步」开始查找';
+    vizBox.innerHTML = '';
+  }
+
+  function render(s) {
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    if (s.cur) {
+      const n = slide.querySelector('#sch-node-' + s.cur);
+      if (n) n.classList.add('cur-step');
+    }
+    if (s.active) {
+      const n = slide.querySelector('#sch-node-' + s.active);
+      if (n) n.classList.add('active-step');
+    }
+    if (s.path) updatePath(vizBox, s.path);
+    if (s.desc) descBox.textContent = s.desc;
+  }
+
+  btn.addEventListener('click', function() {
+    let step = parseInt(slide.dataset.step || '0');
+    const done = slide.dataset.done === 'true';
+    if (done) { reset(); return; }
+    if (step < steps.length) {
+      render(steps[step]);
+      step++;
+      slide.dataset.step = String(step);
+      if (step >= steps.length) {
+        slide.dataset.done = 'true';
+        btn.classList.add('done');
+        btn.textContent = '↺ 重来';
+      }
+    }
+  });
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (slide.classList.contains('active')) reset();
+      }
+    });
+  });
+  observer.observe(slide, { attributes: true });
+})();
+
+/* ===================== Slide 5: Insert Dynamic ===================== */
+(function() {
+  const slide = document.querySelector('.slide[data-index="5"]');
+  const btn = slide.querySelector('.step-btn');
+  const resultBox = slide.querySelector('.result-box');
+  const descBox = slide.querySelector('.desc-box');
+  const vizBox = slide.querySelector('.viz-box');
+
+  const steps = [
+    { cur: '50', path: ['50'], desc: '65 > 50，向右走' },
+    { cur: '70', path: ['50','70'], desc: '65 < 70，向左走' },
+    { cur: '60', path: ['50','70','60'], desc: '65 > 60，向右走，遇到空位' },
+    { inserted: true, path: ['50','70','60','65'], desc: '在 60 的右子树插入 65 ✓' }
+  ];
+
+  function reset() {
+    slide.dataset.step = '0';
+    slide.dataset.done = 'false';
+    btn.classList.remove('done');
+    btn.textContent = '▶ 下一步';
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    slide.querySelectorAll('.inserted').forEach(el => {
+      if (el.id === 'ins-node-65') el.style.opacity = '0';
+    });
+    const edge = slide.querySelector('#ins-edge-new');
+    if (edge) edge.style.opacity = '0';
+    resultBox.textContent = '查找路径：';
+    descBox.textContent = '点击「下一步」开始插入';
+    vizBox.innerHTML = '';
+  }
+
+  function render(s) {
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    if (s.cur) {
+      const n = slide.querySelector('#ins-node-' + s.cur);
+      if (n) n.classList.add('cur-step');
+    }
+    if (s.inserted) {
+      const n = slide.querySelector('#ins-node-65');
+      if (n) { n.style.opacity = '1'; n.classList.add('active-step'); }
+      const edge = slide.querySelector('#ins-edge-new');
+      if (edge) edge.style.opacity = '1';
+    }
+    if (s.path) updatePath(vizBox, s.path);
+    if (s.desc) descBox.textContent = s.desc;
+  }
+
+  btn.addEventListener('click', function() {
+    let step = parseInt(slide.dataset.step || '0');
+    const done = slide.dataset.done === 'true';
+    if (done) { reset(); return; }
+    if (step < steps.length) {
+      render(steps[step]);
+      step++;
+      slide.dataset.step = String(step);
+      if (step >= steps.length) {
+        slide.dataset.done = 'true';
+        btn.classList.add('done');
+        btn.textContent = '↺ 重来';
+      }
+    }
+  });
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (slide.classList.contains('active')) reset();
+      }
+    });
+  });
+  observer.observe(slide, { attributes: true });
+})();
+
+/* ===================== Slide 10: Delete Dynamic ===================== */
+(function() {
+  const slide = document.querySelector('.slide[data-index="9"]');
+  const btn = slide.querySelector('.step-btn');
+  const resultBox = slide.querySelector('.result-box');
+  const descBox = slide.querySelector('.desc-box');
+  const vizBox = slide.querySelector('.viz-box');
+
+  const steps = [
+    { cur: '50', record: ['目标: 50'], desc: '找到待删除结点 50' },
+    { cur: '70', record: ['目标: 50','后继: 70'], desc: '50 有两个孩子，找中序后继：先向右到 70' },
+    { cur: '60', record: ['目标: 50','后继: 70','后继: 60'], desc: '继续向左，找到后继 60（右子树最左）' },
+    { replace: true, record: ['目标: 50','后继: 60','替换: 60→根'], desc: '用 60 替换根结点的值' },
+    { remove: true, record: ['目标: 50','后继: 60','替换: 60→根','删除原 60'], desc: '删除原位置的 60（叶子），完成' }
+  ];
+
+  function reset() {
+    slide.dataset.step = '0';
+    slide.dataset.done = 'false';
+    btn.classList.remove('done');
+    btn.textContent = '▶ 下一步';
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+    const t50 = slide.querySelector('#del-text-50');
+    if (t50) t50.textContent = '50';
+    const n60 = slide.querySelector('#del-node-60');
+    if (n60) { n60.style.opacity = '1'; n60.style.display = ''; }
+    resultBox.textContent = '操作记录：';
+    descBox.textContent = '点击「下一步」开始删除';
+    vizBox.innerHTML = '';
+  }
+
+  function render(s) {
+    slide.querySelectorAll('.active-step').forEach(el => el.classList.remove('active-step'));
+    slide.querySelectorAll('.cur-step').forEach(el => el.classList.remove('cur-step'));
+
+    if (s.cur) {
+      const n = slide.querySelector('#del-node-' + s.cur);
+      if (n) n.classList.add('cur-step');
+    }
+    if (s.replace) {
+      const t50 = slide.querySelector('#del-text-50');
+      if (t50) t50.textContent = '60';
+      const n50 = slide.querySelector('#del-node-50');
+      if (n50) n50.classList.add('active-step');
+    }
+    if (s.remove) {
+      const n60 = slide.querySelector('#del-node-60');
+      if (n60) { n60.style.opacity = '0'; }
+      const t50 = slide.querySelector('#del-text-50');
+      if (t50) t50.textContent = '60';
+      const n50 = slide.querySelector('#del-node-50');
+      if (n50) n50.classList.add('active-step');
+    }
+    if (s.record) {
+      vizBox.innerHTML = '';
+      s.record.forEach(txt => {
+        const div = document.createElement('div');
+        div.style.cssText = 'font-family:monospace;font-size:0.9rem;color:var(--text-bright);padding:2px 0;';
+        div.textContent = txt;
+        vizBox.appendChild(div);
+      });
+    }
+    if (s.desc) descBox.textContent = s.desc;
+  }
+
+  btn.addEventListener('click', function() {
+    let step = parseInt(slide.dataset.step || '0');
+    const done = slide.dataset.done === 'true';
+    if (done) { reset(); return; }
+    if (step < steps.length) {
+      render(steps[step]);
+      step++;
+      slide.dataset.step = String(step);
+      if (step >= steps.length) {
+        slide.dataset.done = 'true';
+        btn.classList.add('done');
+        btn.textContent = '↺ 重来';
+      }
+    }
+  });
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (slide.classList.contains('active')) reset();
+      }
+    });
+  });
+  observer.observe(slide, { attributes: true });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树（Tree）数据结构 — 第一章：基本概念与术语</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0f172a;
+    --bg-slide: #1e293b;
+    --bg-card: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #e2e8f0;
+    --success: #4ade80;
+    --warn: #fbbf24;
+    --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+  }
+
+  /* ===== Slide Container ===== */
+  #slides-container {
+    position: relative;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px 140px 80px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  /* ===== Slide Content Card ===== */
+  .slide-card {
+    background: var(--bg-slide);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 220px);
+    padding: 40px 50px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ===== Typography ===== */
+  .slide-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 36px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+
+  .slide-subtitle {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .slide-body {
+    font-size: 1.35rem;
+    line-height: 1.9;
+    color: var(--text-bright);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== Lists ===== */
+  .slide-body ul, .slide-body ol {
+    margin-left: 28px;
+    margin-bottom: 16px;
+  }
+
+  .slide-body li {
+    margin-bottom: 12px;
+  }
+
+  .slide-body li::marker {
+    color: var(--accent);
+  }
+
+  /* ===== Highlight ===== */
+  .hl {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .hl2 {
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+
+  /* ===== Code / Mono ===== */
+  code, .mono {
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: var(--accent);
+  }
+
+  .code-block {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 28px;
+    margin: 16px 0;
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--text-bright);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1.2rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    text-align: left;
+  }
+
+  th {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  tr:hover {
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  /* ===== Tree SVG ===== */
+  .tree-svg {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+  }
+
+  .tree-node circle {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+
+  .tree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 2.5;
+    fill: none;
+  }
+
+  .tree-node.leaf circle {
+    stroke: var(--success);
+  }
+
+  .tree-node.highlight circle {
+    stroke: var(--warn);
+    stroke-width: 3.5;
+    fill: rgba(251, 191, 36, 0.15);
+  }
+
+  /* ===== Two Column Layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .col-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+  }
+
+  /* ===== Tip / Note Box ===== */
+  .tip-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+    font-size: 1.15rem;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ===== Answer Box ===== */
+  .answer-box {
+    background: rgba(74, 222, 128, 0.08);
+    border-left: 4px solid var(--success);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 12px 0;
+  }
+
+  /* ===== Controls ===== */
+  #controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+    padding: 0 40px;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+
+  .ctrl-btn svg {
+    width: 18px; height: 18px;
+    fill: currentColor;
+  }
+
+  #page-indicator {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #page-indicator .current {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  /* ===== Progress Bar ===== */
+  #progress-bar {
+    position: fixed;
+    bottom: 80px; left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Key hint ===== */
+  .key-hint {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    z-index: 90;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1100px) {
+    .slide { padding: 40px 30px 140px 30px; }
+    .slide-card { padding: 30px 36px; }
+    .slide-title { font-size: 2.2rem; }
+    .slide-body { font-size: 1.15rem; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 20px 16px 140px 16px; }
+    .slide-card { padding: 20px 22px; }
+    .slide-title { font-size: 1.7rem; margin-bottom: 20px; }
+    .slide-body { font-size: 1rem; }
+    .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; }
+    table { font-size: 0.95rem; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== SLIDES ======================== -->
+<div id="slides-container">
+
+<!-- ===== Slide 2: 树的示例图 ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">🌲 树的示例图</div>
+    <div class="slide-body" style="text-align:center;">
+      <p style="margin-bottom:24px;color:var(--text-dim);">A 为根，B/C/D 为 A 的孩子，B 有孩子 E/F，D 有孩子 G，E 有孩子 H</p>
+      <svg class="tree-svg" width="700" height="420" viewBox="0 0 700 420">
+        <!-- edges -->
+        <line class="tree-edge" x1="350" y1="50" x2="180" y2="140"/>
+        <line class="tree-edge" x1="350" y1="50" x2="350" y2="140"/>
+        <line class="tree-edge" x1="350" y1="50" x2="520" y2="140"/>
+        <line class="tree-edge" x1="180" y1="140" x2="110" y2="240"/>
+        <line class="tree-edge" x1="180" y1="140" x2="250" y2="240"/>
+        <line class="tree-edge" x1="520" y1="140" x2="520" y2="240"/>
+        <line class="tree-edge" x1="110" y1="240" x2="110" y2="340"/>
+        <!-- nodes -->
+        <g class="tree-node" transform="translate(350,50)"><circle r="28"/><text>A</text></g>
+        <g class="tree-node" transform="translate(180,140)"><circle r="26"/><text>B</text></g>
+        <g class="tree-node leaf" transform="translate(350,140)"><circle r="26"/><text>C</text></g>
+        <g class="tree-node" transform="translate(520,140)"><circle r="26"/><text>D</text></g>
+        <g class="tree-node" transform="translate(110,240)"><circle r="26"/><text>E</text></g>
+        <g class="tree-node leaf" transform="translate(250,240)"><circle r="26"/><text>F</text></g>
+        <g class="tree-node leaf" transform="translate(520,240)"><circle r="26"/><text>G</text></g>
+        <g class="tree-node leaf" transform="translate(110,340)"><circle r="26"/><text>H</text></g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 3: 核心术语 — 根、结点、边、叶子 ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">📐 核心术语（一）</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div>
+          <div class="col-card" style="margin-bottom:20px;">
+            <h3 style="color:var(--accent);margin-bottom:10px;font-size:1.4rem;">根 Root</h3>
+            <p>树的最顶层结点，<span class="hl">一棵树有且只有一个根</span></p>
+          </div>
+          <div class="col-card" style="margin-bottom:20px;">
+            <h3 style="color:var(--accent);margin-bottom:10px;font-size:1.4rem;">结点 Node</h3>
+            <p>树中的<span class="hl">每一个元素</span>都叫结点</p>
+          </div>
+        </div>
+        <div>
+          <div class="col-card" style="margin-bottom:20px;">
+            <h3 style="color:var(--accent2);margin-bottom:10px;font-size:1.4rem;">边 Edge</h3>
+            <p>连接两个结点的线，表示<span class="hl2">父子关系</span></p>
+          </div>
+          <div class="col-card" style="margin-bottom:20px;">
+            <h3 style="color:var(--success);margin-bottom:10px;font-size:1.4rem;">叶子结点 Leaf</h3>
+            <p><span class="hl-success">度为 0</span> 的结点，即没有子结点的结点</p>
+            <p style="color:var(--text-dim);margin-top:6px;font-size:1.05rem;">类比：组织架构里的"基层员工"</p>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 4: 核心术语 — 度（Degree） ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">📊 核心术语 — 度（Degree）</div>
+    <div class="slide-body">
+      <p style="font-size:1.5rem;margin-bottom:24px;text-align:center;">
+        定义：一个结点拥有的 <span class="hl">子树个数</span>（即 <span class="hl2">孩子的数量</span>）
+      </p>
+
+      <div class="two-col">
+        <div>
+          <svg class="tree-svg" width="400" height="340" viewBox="0 0 400 340">
+            <line class="tree-edge" x1="200" y1="40" x2="100" y2="120"/>
+            <line class="tree-edge" x1="200" y1="40" x2="200" y2="120"/>
+            <line class="tree-edge" x1="200" y1="40" x2="300" y2="120"/>
+            <line class="tree-edge" x1="100" y1="120" x2="60" y2="210"/>
+            <line class="tree-edge" x1="100" y1="120" x2="140" y2="210"/>
+            <line class="tree-edge" x1="300" y1="120" x2="300" y2="210"/>
+            <line class="tree-edge" x1="60" y1="210" x2="60" y2="290"/>
+            <g class="tree-node" transform="translate(200,40)"><circle r="26"/><text>A</text></g>
+            <g class="tree-node" transform="translate(100,120)"><circle r="24"/><text>B</text></g>
+            <g class="tree-node leaf" transform="translate(200,120)"><circle r="24"/><text>C</text></g>
+            <g class="tree-node" transform="translate(300,120)"><circle r="24"/><text>D</text></g>
+            <g class="tree-node" transform="translate(60,210)"><circle r="24"/><text>E</text></g>
+            <g class="tree-node leaf" transform="translate(140,210)"><circle r="24"/><text>F</text></g>
+            <g class="tree-node leaf" transform="translate(300,210)"><circle r="24"/><text>G</text></g>
+            <g class="tree-node leaf" transform="translate(60,290)"><circle r="24"/><text>H</text></g>
+          </svg>
+        </div>
+        <div style="padding-top:10px;">
+          <div class="col-card" style="margin-bottom:14px;">
+            <p><span class="hl">A</span> 的度 = <span class="hl2">3</span>（孩子 B、C、D）</p>
+          </div>
+          <div class="col-card" style="margin-bottom:14px;">
+            <p><span class="hl">B</span> 的度 = <span class="hl2">2</span>（孩子 E、F）</p>
+          </div>
+          <div class="col-card" style="margin-bottom:14px;">
+            <p><span class="hl">C</span> 的度 = <span class="hl-success">0</span>（叶子）</p>
+          </div>
+          <div class="col-card" style="margin-bottom:14px;">
+            <p><span class="hl">E</span> 的度 = <span class="hl2">1</span>（孩子 H）</p>
+          </div>
+          <div class="col-card" style="background:rgba(167,139,250,0.08);border-color:var(--accent2);">
+            <p><span class="hl2">树的度</span> = 所有结点中度数的<span class="hl2">最大值</span></p>
+            <p style="margin-top:6px;">此树的度 = <span class="hl2">3</span>（结点 A）</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 5: 核心术语 — 深度 / 层 ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">📏 核心术语 — 深度 / 层（Depth）</div>
+    <div class="slide-body">
+      <p style="font-size:1.4rem;margin-bottom:20px;text-align:center;">
+        定义：从 <span class="hl">根</span> 到该结点的路径上的 <span class="hl2">边数</span>
+      </p>
+
+      <div class="two-col">
+        <div>
+          <svg class="tree-svg" width="400" height="360" viewBox="0 0 400 360">
+            <!-- Layer lines -->
+            <rect x="10" y="10" width="380" height="70" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.2)"/>
+            <rect x="10" y="90" width="380" height="70" rx="10" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)"/>
+            <rect x="10" y="170" width="380" height="70" rx="10" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.2)"/>
+            <rect x="10" y="250" width="380" height="70" rx="10" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.15)"/>
+            <text x="370" y="45" text-anchor="end" fill="var(--accent)" font-size="14" opacity="0.7">深度 1</text>
+            <text x="370" y="125" text-anchor="end" fill="var(--accent)" font-size="14" opacity="0.7">深度 2</text>
+            <text x="370" y="205" text-anchor="end" fill="var(--accent)" font-size="14" opacity="0.7">深度 3</text>
+            <text x="370" y="285" text-anchor="end" fill="var(--accent)" font-size="14" opacity="0.7">深度 4</text>
+
+            <line class="tree-edge" x1="200" y1="45" x2="100" y2="125"/>
+            <line class="tree-edge" x1="200" y1="45" x2="200" y2="125"/>
+            <line class="tree-edge" x1="200" y1="45" x2="300" y2="125"/>
+            <line class="tree-edge" x1="100" y1="125" x2="60" y2="205"/>
+            <line class="tree-edge" x1="100" y1="125" x2="140" y2="205"/>
+            <line class="tree-edge" x1="300" y1="125" x2="300" y2="205"/>
+            <line class="tree-edge" x1="60" y1="205" x2="60" y2="285"/>
+
+            <g class="tree-node" transform="translate(200,45)"><circle r="26"/><text>A</text></g>
+            <g class="tree-node" transform="translate(100,125)"><circle r="24"/><text>B</text></g>
+            <g class="tree-node leaf" transform="translate(200,125)"><circle r="24"/><text>C</text></g>
+            <g class="tree-node" transform="translate(300,125)"><circle r="24"/><text>D</text></g>
+            <g class="tree-node" transform="translate(60,205)"><circle r="24"/><text>E</text></g>
+            <g class="tree-node leaf" transform="translate(140,205)"><circle r="24"/><text>F</text></g>
+            <g class="tree-node leaf" transform="translate(300,205)"><circle r="24"/><text>G</text></g>
+            <g class="tree-node leaf" transform="translate(60,285)"><circle r="24"/><text>H</text></g>
+          </svg>
+        </div>
+        <div style="padding-top:20px;">
+          <div class="tip-box">
+            <strong>📌 约定：</strong>根深度 = <span class="hl">1</span>
+          </div>
+          <div class="col-card" style="margin-top:16px;">
+            <p><span class="hl">A</span> 的深度 = <span class="hl2">1</span></p>
+            <p style="margin-top:8px;"><span class="hl">B / C / D</span> 的深度 = <span class="hl2">2</span></p>
+            <p style="margin-top:8px;"><span class="hl">E / F / G</span> 的深度 = <span class="hl2">3</span></p>
+            <p style="margin-top:8px;"><span class="hl">H</span> 的深度 = <span class="hl2">4</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 6: 核心术语 — 高度 ===== -->
+<div class="slide" data-index="5">
+  <div class="slide-card">
+    <div class="slide-title">🏔️ 核心术语 — 高度（Height）</div>
+    <div class="slide-body">
+      <p style="font-size:1.4rem;margin-bottom:20px;text-align:center;">
+        定义：从该结点到 <span class="hl">最远叶子</span> 的路径上的 <span class="hl2">边数</span>
+      </p>
+
+      <div class="two-col">
+        <div>
+          <svg class="tree-svg" width="400" height="360" viewBox="0 0 400 360">
+            <line class="tree-edge" x1="200" y1="45" x2="100" y2="125"/>
+            <line class="tree-edge" x1="200" y1="45" x2="200" y2="125"/>
+            <line class="tree-edge" x1="200" y1="45" x2="300" y2="125"/>
+            <line class="tree-edge" x1="100" y1="125" x2="60" y2="205"/>
+            <line class="tree-edge" x1="100" y1="125" x2="140" y2="205"/>
+            <line class="tree-edge" x1="300" y1="125" x2="300" y2="205"/>
+            <line class="tree-edge" x1="60" y1="205" x2="60" y2="285"/>
+
+            <!-- height labels -->
+            <text x="235" y="45" fill="var(--warn)" font-size="16" font-weight="700">h=4</text>
+            <text x="135" y="125" fill="var(--warn)" font-size="15" font-weight="700">h=3</text>
+            <text x="235" y="125" fill="var(--success)" font-size="15" font-weight="700">h=1</text>
+            <text x="335" y="125" fill="var(--warn)" font-size="15" font-weight="700">h=2</text>
+            <text x="95" y="205" fill="var(--warn)" font-size="15" font-weight="700">h=2</text>
+            <text x="175" y="205" fill="var(--success)" font-size="15" font-weight="700">h=1</text>
+            <text x="335" y="205" fill="var(--success)" font-size="15" font-weight="700">h=1</text>
+            <text x="95" y="285" fill="var(--success)" font-size="15" font-weight="700">h=1</text>
+
+            <g class="tree-node" transform="translate(200,45)"><circle r="26"/><text>A</text></g>
+            <g class="tree-node" transform="translate(100,125)"><circle r="24"/><text>B</text></g>
+            <g class="tree-node leaf" transform="translate(200,125)"><circle r="24"/><text>C</text></g>
+            <g class="tree-node" transform="translate(300,125)"><circle r="24"/><text>D</text></g>
+            <g class="tree-node" transform="translate(60,205)"><circle r="24"/><text>E</text></g>
+            <g class="tree-node leaf" transform="translate(140,205)"><circle r="24"/><text>F</text></g>
+            <g class="tree-node leaf" transform="translate(300,205)"><circle r="24"/><text>G</text></g>
+            <g class="tree-node leaf" transform="translate(60,285)"><circle r="24"/><text>H</text></g>
+          </svg>
+        </div>
+        <div style="padding-top:20px;">
+          <div class="tip-box">
+            <strong>📌 约定：</strong>叶子高度 = <span class="hl">1</span>
+          </div>
+          <div class="col-card" style="margin-top:16px;">
+            <p><span class="hl">H</span>（叶子）高度 = <span class="hl-success">1</span></p>
+            <p style="margin-top:8px;"><span class="hl">E</span> 的高度 = <span class="hl2">2</span>（E→H）</p>
+            <p style="margin-top:8px;"><span class="hl">B</span> 的高度 = <span class="hl2">3</span>（B→E→H 最长）</p>
+            <p style="margin-top:8px;"><span class="hl">A</span> 的高度 = <span class="hl-warn">4</span>（A→B→E→H 最长）</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 7: 路径、祖先、子孙 ===== -->
+<div class="slide" data-index="6">
+  <div class="slide-card">
+    <div class="slide-title">🔗 路径、祖先、子孙</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div>
+          <div class="col-card" style="margin-bottom:18px;">
+            <h3 style="color:var(--accent);margin-bottom:10px;font-size:1.35rem;">路径 Path</h3>
+            <p>从一个结点到另一个结点经过的结点序列</p>
+            <p style="margin-top:8px;color:var(--text-dim);">路径长度 = 边的数量</p>
+            <p style="margin-top:10px;"><span class="hl">A → H</span> 的路径：<code>A→B→E→H</code></p>
+            <p>路径长度 = <span class="hl2">3</span></p>
+          </div>
+          <div class="col-card" style="margin-bottom:18px;">
+            <h3 style="color:var(--accent2);margin-bottom:10px;font-size:1.35rem;">祖先 Ancestor</h3>
+            <p>从根到该结点路径上的所有结点</p>
+            <p style="margin-top:8px;color:var(--text-dim);">（包括根，不包括自己）</p>
+            <p style="margin-top:10px;"><span class="hl">H</span> 的祖先：<span class="hl2">A, B, E</span></p>
+          </div>
+        </div>
+        <div>
+          <div class="col-card" style="margin-bottom:18px;">
+            <h3 style="color:var(--success);margin-bottom:10px;font-size:1.35rem;">子孙 Descendant</h3>
+            <p>该结点下面所有能到达的结点</p>
+            <p style="margin-top:10px;"><span class="hl">B</span> 的子孙：<span class="hl-success">E, F, H</span></p>
+          </div>
+          <div class="col-card" style="margin-bottom:18px;">
+            <h3 style="color:var(--warn);margin-bottom:10px;font-size:1.35rem;">父 / 子 结点</h3>
+            <p>直接相连的一对结点</p>
+            <p style="margin-top:8px;">A 是 B 的 <span class="hl-warn">父</span>，B 是 A 的 <span class="hl-warn">子</span></p>
+          </div>
+          <div class="col-card">
+            <h3 style="color:#f472b6;margin-bottom:10px;font-size:1.35rem;">兄弟结点 Sibling</h3>
+            <p>同一个父结点的孩子</p>
+            <p style="margin-top:8px;"><span class="hl2">B, C, D</span> 互为兄弟</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 9: 有序树 vs 无序树 ===== -->
+<div class="slide" data-index="8">
+  <div class="slide-card">
+    <div class="slide-title">🔀 有序树 vs 无序树</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div class="col-card" style="border-color:var(--accent);">
+          <h3 style="color:var(--accent);font-size:1.5rem;margin-bottom:16px;">有序树 Ordered Tree</h3>
+          <ul style="margin-left:22px;">
+            <li>子树有 <span class="hl">左右顺序</span> 之分</li>
+            <li>交换位置 → 得到 <span class="hl2">不同的树</span></li>
+            <li style="margin-top:10px;">典型例子：<span class="hl">二叉树</span></li>
+          </ul>
+          <svg class="tree-svg" width="260" height="160" viewBox="0 0 260 160">
+            <text x="130" y="20" text-anchor="middle" fill="var(--text-dim)" font-size="13">左子树 = 2，右子树 = 3</text>
+            <line class="tree-edge" x1="130" y1="40" x2="70" y2="110"/>
+            <line class="tree-edge" x1="130" y1="40" x2="190" y2="110"/>
+            <text x="100" y="80" text-anchor="middle" fill="var(--accent)" font-size="14">左</text>
+            <text x="160" y="80" text-anchor="middle" fill="var(--accent2)" font-size="14">右</text>
+            <g class="tree-node" transform="translate(130,40)"><circle r="22"/><text>1</text></g>
+            <g class="tree-node leaf" transform="translate(70,110)"><circle r="22"/><text>2</text></g>
+            <g class="tree-node leaf" transform="translate(190,110)"><circle r="22"/><text>3</text></g>
+          </svg>
+        </div>
+        <div class="col-card" style="border-color:var(--success);">
+          <h3 style="color:var(--success);font-size:1.5rem;margin-bottom:16px;">无序树 Unordered Tree</h3>
+          <ul style="margin-left:22px;">
+            <li>子树 <span class="hl-success">没有顺序</span></li>
+            <li>交换位置 → <span class="hl">仍是同一棵树</span></li>
+            <li style="margin-top:10px;">典型例子：<span class="hl-success">家族族谱</span></li>
+          </ul>
+          <svg class="tree-svg" width="260" height="160" viewBox="0 0 260 160">
+            <text x="130" y="20" text-anchor="middle" fill="var(--text-dim)" font-size="13">子树 {2, 3}，无顺序</text>
+            <line class="tree-edge" x1="130" y1="40" x2="70" y2="110"/>
+            <line class="tree-edge" x1="130" y1="40" x2="190" y2="110"/>
+            <g class="tree-node" transform="translate(130,40)"><circle r="22"/><text>1</text></g>
+            <g class="tree-node leaf" transform="translate(70,110)"><circle r="22"/><text>2</text></g>
+            <g class="tree-node leaf" transform="translate(190,110)"><circle r="22"/><text>3</text></g>
+          </svg>
+        </div>
+      </div>
+      <div class="tip-box" style="margin-top:20px;text-align:center;">
+        <strong>💡 绝大多数算法问题中讨论的是 <span class="hl">有序树</span></strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 10: 森林 ===== -->
+<div class="slide" data-index="9">
+  <div class="slide-card">
+    <div class="slide-title">🌲🌲 森林（Forest）</div>
+    <div class="slide-body">
+      <p style="font-size:1.4rem;margin-bottom:24px;text-align:center;">
+        定义：若干棵 <span class="hl">互不相交</span> 的树的 <span class="hl2">集合</span>
+      </p>
+
+      <div class="two-col">
+        <div style="text-align:center;">
+          <p style="color:var(--accent);margin-bottom:12px;font-weight:600;">原树</p>
+          <svg class="tree-svg" width="320" height="260" viewBox="0 0 320 260">
+            <line class="tree-edge" x1="160" y1="40" x2="80" y2="110"/>
+            <line class="tree-edge" x1="160" y1="40" x2="160" y2="110"/>
+            <line class="tree-edge" x1="160" y1="40" x2="240" y2="110"/>
+            <line class="tree-edge" x1="80" y1="110" x2="50" y2="180"/>
+            <line class="tree-edge" x1="80" y1="110" x2="110" y2="180"/>
+            <line class="tree-edge" x1="240" y1="110" x2="240" y2="180"/>
+            <line class="tree-edge" x1="50" y1="180" x2="50" y2="230"/>
+            <g class="tree-node highlight" transform="translate(160,40)"><circle r="24"/><text>A</text></g>
+            <g class="tree-node" transform="translate(80,110)"><circle r="22"/><text>B</text></g>
+            <g class="tree-node leaf" transform="translate(160,110)"><circle r="22"/><text>C</text></g>
+            <g class="tree-node" transform="translate(240,110)"><circle r="22"/><text>D</text></g>
+            <g class="tree-node" transform="translate(50,180)"><circle r="22"/><text>E</text></g>
+            <g class="tree-node leaf" transform="translate(110,180)"><circle r="22"/><text>F</text></g>
+            <g class="tree-node leaf" transform="translate(240,180)"><circle r="22"/><text>G</text></g>
+            <g class="tree-node leaf" transform="translate(50,230)"><circle r="22"/><text>H</text></g>
+          </svg>
+          <p style="color:var(--text-dim);font-size:1rem;">删掉根 A</p>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--success);margin-bottom:12px;font-weight:600;">森林</p>
+          <svg class="tree-svg" width="320" height="260" viewBox="0 0 320 260">
+            <!-- Tree 1: B-E-F-H -->
+            <line class="tree-edge" x1="100" y1="60" x2="60" y2="140"/>
+            <line class="tree-edge" x1="100" y1="60" x2="140" y2="140"/>
+            <line class="tree-edge" x1="60" y1="140" x2="60" y2="220"/>
+            <g class="tree-node" transform="translate(100,60)"><circle r="22"/><text>B</text></g>
+            <g class="tree-node" transform="translate(60,140)"><circle r="20"/><text>E</text></g>
+            <g class="tree-node leaf" transform="translate(140,140)"><circle r="20"/><text>F</text></g>
+            <g class="tree-node leaf" transform="translate(60,220)"><circle r="20"/><text>H</text></g>
+            <!-- Tree 2: C -->
+            <g class="tree-node leaf" transform="translate(220,60)"><circle r="22"/><text>C</text></g>
+            <!-- Tree 3: D-G -->
+            <line class="tree-edge" x1="220" y1="180" x2="220" y2="220"/>
+            <circle cx="220" cy="180" r="20" fill="var(--bg-card)" stroke="var(--accent)" stroke-width="2"/>
+            <text x="220" y="180" text-anchor="middle" dominant-baseline="central" fill="var(--text-main)" font-family="monospace" font-size="16" font-weight="600">D</text>
+            <circle cx="220" cy="220" r="20" fill="var(--bg-card)" stroke="var(--success)" stroke-width="2"/>
+            <text x="220" y="220" text-anchor="middle" dominant-baseline="central" fill="var(--text-main)" font-family="monospace" font-size="16" font-weight="600">G</text>
+          </svg>
+          <p style="color:var(--text-dim);font-size:1rem;">{ B-E-F-H, C, D-G }</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+</div><!-- /slides-container -->
+
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 8.33%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total">12</span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+})();
+</script>
+
+</body>
+</html>

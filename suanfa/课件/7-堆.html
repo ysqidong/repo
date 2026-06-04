@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树（Tree）数据结构 — 第七章：堆与优先队列</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-deep: #0f172a; --bg-slide: #1e293b; --bg-card: #334155;
+    --accent: #38bdf8; --accent2: #a78bfa; --text-main: #f1f5f9;
+    --text-dim: #94a3b8; --text-bright: #e2e8f0; --success: #4ade80;
+    --warn: #fbbf24; --danger: #f87171; --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+  html, body { width: 100%; height: 100%; overflow: hidden;
+    font-family: "Microsoft YaHei","PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;
+    background: var(--bg-deep); color: var(--text-main); }
+  #slides-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 80px 180px 80px; opacity: 0; transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease; pointer-events: none; }
+  .slide.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+  .slide.prev { opacity: 0; transform: translateX(-100%); }
+  .slide-card { background: var(--bg-slide); border: 1px solid var(--border); border-radius: 20px;
+    box-shadow: var(--shadow); width: 100%; max-width: 1200px; max-height: calc(100vh - 260px);
+    padding: 30px 40px; overflow-y: auto; display: flex; flex-direction: column; }
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .slide-title { font-size: 2.4rem; font-weight: 700; margin-bottom: 24px; text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; flex-shrink: 0; }
+  .slide-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 12px; font-weight: 600; flex-shrink: 0; }
+  .slide-body { font-size: 1.2rem; line-height: 1.7; color: var(--text-bright); flex: 1; overflow-y: auto; }
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .slide-body ul, .slide-body ol { margin-left: 28px; margin-bottom: 16px; }
+  .slide-body li { margin-bottom: 8px; }
+  .slide-body li::marker { color: var(--accent); }
+  .hl { color: var(--accent); font-weight: 600; }
+  .hl2 { color: var(--accent2); font-weight: 600; }
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+  .hl-danger { color: var(--danger); font-weight: 600; }
+  code, .mono { font-family: "Fira Code","Cascadia Code","Source Code Pro",Consolas,monospace;
+    background: rgba(56,189,248,0.12); padding: 2px 8px; border-radius: 6px; font-size: 0.95em; color: var(--accent); }
+  .code-block { background: #0b1220; border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 28px; margin: 16px 0;
+    font-family: "Fira Code","Cascadia Code","Source Code Pro",Consolas,monospace;
+    font-size: 0.92rem; line-height: 1.7; color: var(--text-bright); white-space: pre; overflow-x: auto; }
+  .syn-kw { color: #c084fc; font-weight: 600; }
+  .syn-str { color: #4ade80; }
+  .syn-cmt { color: #64748b; }
+  .syn-num { color: #fb923c; }
+  .syn-func { color: #60a5fa; }
+  .syn-cls { color: #fbbf24; }
+  .syn-blt { color: #22d3ee; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 1.2rem; }
+  th, td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
+  th { background: rgba(56,189,248,0.15); color: var(--accent); font-weight: 600; }
+  tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+  tr:hover { background: rgba(56,189,248,0.08); }
+  .tree-svg { display: block; margin: 12px auto; max-width: 100%; }
+  .tree-node circle { fill: var(--bg-card); stroke: var(--accent); stroke-width: 2.5; }
+  .tree-node text { fill: var(--text-main); font-family: "Fira Code","Cascadia Code",Consolas,monospace;
+    font-size: 18px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .tree-edge { stroke: var(--border); stroke-width: 2.5; fill: none; }
+  .tree-node.leaf circle { stroke: var(--success); }
+  .tree-node.highlight circle { stroke: var(--warn); stroke-width: 3.5; fill: rgba(251,191,36,0.15); }
+  .tree-node.danger circle { stroke: var(--danger); stroke-width: 3; fill: rgba(248,113,113,0.12); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+  .col-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; }
+  .formula { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.25); border-radius: 12px;
+    padding: 12px 18px; text-align: center; font-size: 1.2rem; margin: 16px 0;
+    font-family: "Fira Code",Consolas,monospace; }
+  #controls { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex; justify-content: center; align-items: center; gap: 24px; z-index: 100; padding: 0 40px; }
+  .ctrl-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main);
+    padding: 10px 24px; border-radius: 10px; font-size: 1rem; cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 8px; user-select: none; }
+  .ctrl-btn:hover { background: var(--accent); color: var(--bg-deep); border-color: var(--accent); }
+  .ctrl-btn:disabled { opacity: 0.35; cursor: not-allowed; background: var(--bg-card); color: var(--text-dim); border-color: var(--border); }
+  .ctrl-btn svg { width: 18px; height: 18px; fill: currentColor; }
+  #page-indicator { font-size: 1.1rem; color: var(--text-dim); min-width: 80px; text-align: center; font-variant-numeric: tabular-nums; }
+  #page-indicator .current { color: var(--accent); font-weight: 700; font-size: 1.3rem; }
+  #progress-bar { position: fixed; bottom: 80px; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.06); z-index: 100; }
+  #progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.4s ease; }
+  .key-hint { position: fixed; bottom: 90px; right: 30px; color: var(--text-dim); font-size: 0.85rem; opacity: 0.6; z-index: 90; }
+  @media (max-width: 1100px) { .slide { padding: 40px 30px 180px 30px; } .slide-card { padding: 30px 36px; } .slide-title { font-size: 2.2rem; } .slide-body { font-size: 1.15rem; } .two-col { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { .slide { padding: 20px 16px 180px 16px; } .slide-card { padding: 20px 22px; } .slide-title { font-size: 1.7rem; margin-bottom: 20px; } .slide-body { font-size: 1rem; } .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; } table { font-size: 0.95rem; } th,td { padding: 8px 10px; } }
+  .tip-box { background: rgba(56,189,248,0.08); border-left: 4px solid var(--accent); padding: 12px 18px; border-radius: 0 10px 10px 0; margin: 14px 0; font-size: 1.05rem; }
+  .tip-box strong { color: var(--accent); }
+  .tree-node.active-step circle { stroke: var(--warn) !important; stroke-width: 3.5 !important; fill: rgba(251,191,36,0.2) !important; }
+  .tree-node.active-step text { fill: var(--warn) !important; font-weight: 700; }
+  .tree-node.inserted circle { stroke: var(--success) !important; stroke-width: 3 !important; fill: rgba(74,222,128,0.15) !important; }
+  .tree-node.inserted text { fill: var(--success) !important; font-weight: 700; }
+  .anim-layout { display: flex; gap: 24px; align-items: flex-start; }
+  .anim-tree { flex-shrink: 0; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+  .anim-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .result-box { min-height: 36px; font-family: "Fira Code",Consolas,monospace; font-size: 1.05rem; color: var(--warn); font-weight: 700;
+    background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; display: flex; align-items: center; }
+  .viz-box { min-height: 80px; background: rgba(0,0,0,0.1); border: 1px dashed var(--border); border-radius: 10px;
+    padding: 10px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .desc-box { min-height: 30px; color: var(--text-dim); font-size: 1rem; padding: 4px 0; }
+  .step-btn { min-width: 120px; padding: 8px 20px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
+    color: var(--bg-deep); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .step-btn:hover { background: var(--accent2); border-color: var(--accent2); }
+  .step-btn.done { background: transparent; border-color: var(--success); color: var(--success); }
+  @media (max-width: 768px) { .anim-layout { flex-direction: column; align-items: center; } .anim-panel { width: 100%; } }
+</style>
+</head>
+<body>
+<div id="slides-container">
+<!-- ===== Slide 0: 标题页 ===== -->
+<div class="slide" data-index="0">
+  <div class="slide-card" style="align-items:center;justify-content:center;text-align:center;">
+    <div class="slide-title" style="font-size:2.8rem;margin-bottom:16px;">第七章 堆与优先队列</div>
+    <div style="font-size:1.6rem;color:var(--accent2);margin-bottom:30px;font-weight:600;">Heap &amp; Priority Queue</div>
+    <div style="font-size:1.2rem;color:var(--text-dim);margin-bottom:40px;">完全二叉树 + 堆序性 · 上浮 · 下沉 · TopK</div>
+    <svg class="tree-svg" width="420" height="280" viewBox="0 0 420 280">
+      <line class="tree-edge" x1="210" y1="40" x2="110" y2="115"/>
+      <line class="tree-edge" x1="210" y1="40" x2="310" y2="115"/>
+      <line class="tree-edge" x1="110" y1="115" x2="60" y2="195"/>
+      <line class="tree-edge" x1="110" y1="115" x2="160" y2="195"/>
+      <line class="tree-edge" x1="310" y1="115" x2="260" y2="195"/>
+      <line class="tree-edge" x1="310" y1="115" x2="360" y2="195"/>
+      <g class="tree-node" transform="translate(210,40)"><circle r="24"/><text>20</text></g>
+      <g class="tree-node" transform="translate(110,115)"><circle r="21"/><text>15</text></g>
+      <g class="tree-node" transform="translate(310,115)"><circle r="21"/><text>18</text></g>
+      <g class="tree-node leaf" transform="translate(60,195)"><circle r="19"/><text>10</text></g>
+      <g class="tree-node leaf" transform="translate(160,195)"><circle r="19"/><text>12</text></g>
+      <g class="tree-node leaf" transform="translate(260,195)"><circle r="19"/><text>16</text></g>
+      <g class="tree-node leaf" transform="translate(360,195)"><circle r="19"/><text>14</text></g>
+      <text x="210" y="255" text-anchor="middle" fill="var(--success)" font-size="15" font-weight="700">大顶堆 Max Heap</text>
+    </svg>
+  </div>
+</div>
+<!-- ===== Slide 1: 什么是堆？ ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">什么是堆？</div>
+    <div class="slide-body">
+      <div style="text-align:center;margin-bottom:16px;">
+        <p style="font-size:1.4rem;">堆 = <span class="hl">完全二叉树</span> + <span class="hl2">堆序性</span></p>
+      </div>
+      <div class="two-col">
+        <div style="text-align:center;">
+          <p style="color:var(--danger);font-weight:700;font-size:1.2rem;margin-bottom:10px;">普通完全二叉树（不满足堆序）</p>
+          <svg class="tree-svg" width="320" height="260" viewBox="0 0 320 260">
+            <line class="tree-edge" x1="160" y1="40" x2="80" y2="110"/>
+            <line class="tree-edge" x1="160" y1="40" x2="240" y2="110"/>
+            <line class="tree-edge" x1="80" y1="110" x2="40" y2="190"/>
+            <line class="tree-edge" x1="80" y1="110" x2="120" y2="190"/>
+            <line class="tree-edge" x1="240" y1="110" x2="200" y2="190"/>
+            <line class="tree-edge" x1="240" y1="110" x2="280" y2="190"/>
+            <g class="tree-node" transform="translate(160,40)"><circle r="22"/><text>10</text></g>
+            <g class="tree-node danger" transform="translate(80,110)"><circle r="20"/><text>20</text></g>
+            <g class="tree-node" transform="translate(240,110)"><circle r="20"/><text>15</text></g>
+            <g class="tree-node leaf" transform="translate(40,190)"><circle r="18"/><text>12</text></g>
+            <g class="tree-node leaf" transform="translate(120,190)"><circle r="18"/><text>8</text></g>
+            <g class="tree-node leaf" transform="translate(200,190)"><circle r="18"/><text>18</text></g>
+            <g class="tree-node leaf" transform="translate(280,190)"><circle r="18"/><text>14</text></g>
+            <text x="160" y="240" text-anchor="middle" fill="var(--danger)" font-size="13">父 10 &lt; 子 20，违反堆序</text>
+          </svg>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--success);font-weight:700;font-size:1.2rem;margin-bottom:10px;">大顶堆（父 ≥ 子）</p>
+          <svg class="tree-svg" width="320" height="260" viewBox="0 0 320 260">
+            <line class="tree-edge" x1="160" y1="40" x2="80" y2="110"/>
+            <line class="tree-edge" x1="160" y1="40" x2="240" y2="110"/>
+            <line class="tree-edge" x1="80" y1="110" x2="40" y2="190"/>
+            <line class="tree-edge" x1="80" y1="110" x2="120" y2="190"/>
+            <line class="tree-edge" x1="240" y1="110" x2="200" y2="190"/>
+            <line class="tree-edge" x1="240" y1="110" x2="280" y2="190"/>
+            <g class="tree-node" transform="translate(160,40)"><circle r="22"/><text>20</text></g>
+            <g class="tree-node" transform="translate(80,110)"><circle r="20"/><text>15</text></g>
+            <g class="tree-node" transform="translate(240,110)"><circle r="20"/><text>18</text></g>
+            <g class="tree-node leaf" transform="translate(40,190)"><circle r="18"/><text>10</text></g>
+            <g class="tree-node leaf" transform="translate(120,190)"><circle r="18"/><text>12</text></g>
+            <g class="tree-node leaf" transform="translate(200,190)"><circle r="18"/><text>16</text></g>
+            <g class="tree-node leaf" transform="translate(280,190)"><circle r="18"/><text>14</text></g>
+            <text x="160" y="240" text-anchor="middle" fill="var(--success)" font-size="13">每个父 ≥ 两个孩子</text>
+          </svg>
+        </div>
+      </div>
+      <div class="tip-box" style="margin-top:16px;text-align:center;">
+        <strong>注意：</strong>堆只保证父子关系，<span class="hl-danger">不保证左右有序</span>（和 BST 不同）
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 2: 大顶堆 vs 小顶堆 ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">大顶堆 vs 小顶堆</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div style="text-align:center;">
+          <p style="color:var(--accent);font-weight:700;font-size:1.3rem;margin-bottom:8px;">大顶堆 Max Heap</p>
+          <svg class="tree-svg" width="320" height="250" viewBox="0 0 320 250">
+            <line class="tree-edge" x1="160" y1="35" x2="80" y2="105"/>
+            <line class="tree-edge" x1="160" y1="35" x2="240" y2="105"/>
+            <line class="tree-edge" x1="80" y1="105" x2="40" y2="185"/>
+            <line class="tree-edge" x1="80" y1="105" x2="120" y2="185"/>
+            <line class="tree-edge" x1="240" y1="105" x2="200" y2="185"/>
+            <line class="tree-edge" x1="240" y1="105" x2="280" y2="185"/>
+            <g class="tree-node" transform="translate(160,35)"><circle r="22"/><text>20</text></g>
+            <g class="tree-node" transform="translate(80,105)"><circle r="20"/><text>15</text></g>
+            <g class="tree-node" transform="translate(240,105)"><circle r="20"/><text>18</text></g>
+            <g class="tree-node leaf" transform="translate(40,185)"><circle r="18"/><text>10</text></g>
+            <g class="tree-node leaf" transform="translate(120,185)"><circle r="18"/><text>12</text></g>
+            <g class="tree-node leaf" transform="translate(200,185)"><circle r="18"/><text>16</text></g>
+            <g class="tree-node leaf" transform="translate(280,185)"><circle r="18"/><text>14</text></g>
+          </svg>
+          <div class="col-card" style="margin-top:8px;"><p>堆顶 = <span class="hl">最大值</span></p><p>父 ≥ 子</p></div>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--accent2);font-weight:700;font-size:1.3rem;margin-bottom:8px;">小顶堆 Min Heap</p>
+          <svg class="tree-svg" width="320" height="250" viewBox="0 0 320 250">
+            <line class="tree-edge" x1="160" y1="35" x2="80" y2="105"/>
+            <line class="tree-edge" x1="160" y1="35" x2="240" y2="105"/>
+            <line class="tree-edge" x1="80" y1="105" x2="40" y2="185"/>
+            <line class="tree-edge" x1="80" y1="105" x2="120" y2="185"/>
+            <line class="tree-edge" x1="240" y1="105" x2="200" y2="185"/>
+            <line class="tree-edge" x1="240" y1="105" x2="280" y2="185"/>
+            <g class="tree-node" transform="translate(160,35)"><circle r="22"/><text>3</text></g>
+            <g class="tree-node" transform="translate(80,105)"><circle r="20"/><text>5</text></g>
+            <g class="tree-node" transform="translate(240,105)"><circle r="20"/><text>7</text></g>
+            <g class="tree-node leaf" transform="translate(40,185)"><circle r="18"/><text>10</text></g>
+            <g class="tree-node leaf" transform="translate(120,185)"><circle r="18"/><text>8</text></g>
+            <g class="tree-node leaf" transform="translate(200,185)"><circle r="18"/><text>9</text></g>
+            <g class="tree-node leaf" transform="translate(280,185)"><circle r="18"/><text>12</text></g>
+          </svg>
+          <div class="col-card" style="margin-top:8px;"><p>堆顶 = <span class="hl2">最小值</span></p><p>父 ≤ 子</p></div>
+        </div>
+      </div>
+      <table style="margin-top:20px;font-size:1.05rem;">
+        <thead><tr><th>特性</th><th>大顶堆</th><th>小顶堆</th></tr></thead>
+        <tbody>
+          <tr><td>堆顶元素</td><td>最大值</td><td>最小值</td></tr>
+          <tr><td>堆序性</td><td>父 ≥ 子</td><td>父 ≤ 子</td></tr>
+          <tr><td>典型用途</td><td>找 TopK 大、优先队列（大优先）</td><td>找 TopK 小、Dijkstra</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip-box">
+      <strong>注意：</strong>本课程讲的"堆"默认指<strong>二叉堆</strong>，它必须是完全二叉树（这样才能用数组紧凑存储，无空间浪费）。广义的堆（如二项堆、斐波那契堆）不必是完全二叉树，属于进阶内容。
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 3: 数组存储 — 下标魔法 ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">数组存储</div>
+    <div class="slide-body">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;">
+        <div class="formula" style="flex:1;min-width:200px;max-width:300px;">left(i) = 2i + 1</div>
+        <div class="formula" style="flex:1;min-width:200px;max-width:300px;">right(i) = 2i + 2</div>
+        <div class="formula" style="flex:1;min-width:200px;max-width:300px;">parent(i) = (i - 1) // 2</div>
+      </div>
+      <div class="two-col" style="align-items:center;">
+        <div>
+          <div class="slide-subtitle">数组表示</div>
+          <div style="display:flex;gap:6px;justify-content:center;margin:14px 0;">
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">20</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">0</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">15</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">1</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">18</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">2</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">10</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">3</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">12</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">4</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">16</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">5</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:monospace;font-size:1.1rem;">14</div><div style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">6</div></div>
+          </div>
+          <div class="code-block" style="font-size:0.88rem;padding:14px 20px;"><span class="syn-kw">def</span> <span class="syn-func">left</span>(i):
+    <span class="syn-kw">return</span> <span class="syn-num">2</span> * i + <span class="syn-num">1</span>
+
+<span class="syn-kw">def</span> <span class="syn-func">right</span>(i):
+    <span class="syn-kw">return</span> <span class="syn-num">2</span> * i + <span class="syn-num">2</span>
+
+<span class="syn-kw">def</span> <span class="syn-func">parent</span>(i):
+    <span class="syn-kw">return</span> (i - <span class="syn-num">1</span>) // <span class="syn-num">2</span>
+
+<span class="syn-cmt"># 验证：结点 1 的父 = (1-1)//2 = 0 → 值 20</span>
+<span class="syn-cmt"># 结点 2 的左孩子 = 2*2+1 = 5 → 值 16</span></div>
+        </div>
+        <div style="text-align:center;">
+          <svg class="tree-svg" width="340" height="280" viewBox="0 0 340 280">
+            <line class="tree-edge" x1="153" y1="54" x2="100" y2="97"/>
+            <line class="tree-edge" x1="187" y1="54" x2="240" y2="97"/>
+            <line class="tree-edge" x1="76" y1="128" x2="51" y2="174"/>
+            <line class="tree-edge" x1="94" y1="128" x2="119" y2="174"/>
+            <line class="tree-edge" x1="246" y1="128" x2="203" y2="174"/>
+            <line class="tree-edge" x1="264" y1="128" x2="289" y2="174"/>
+            <g class="tree-node" transform="translate(170,40)"><circle r="22"/><text>20</text></g>
+            <text x="170" y="78" text-anchor="middle" fill="var(--text-dim)" font-size="11">0</text>
+            <g class="tree-node" transform="translate(85,110)"><circle r="20"/><text>15</text></g>
+            <text x="85" y="146" text-anchor="middle" fill="var(--text-dim)" font-size="11">1</text>
+            <g class="tree-node" transform="translate(255,110)"><circle r="20"/><text>18</text></g>
+            <text x="255" y="146" text-anchor="middle" fill="var(--text-dim)" font-size="11">2</text>
+            <g class="tree-node leaf" transform="translate(42,190)"><circle r="18"/><text>10</text></g>
+            <text x="42" y="220" text-anchor="middle" fill="var(--text-dim)" font-size="11">3</text>
+            <g class="tree-node leaf" transform="translate(128,190)"><circle r="18"/><text>12</text></g>
+            <text x="128" y="220" text-anchor="middle" fill="var(--text-dim)" font-size="11">4</text>
+            <g class="tree-node leaf" transform="translate(212,190)"><circle r="18"/><text>16</text></g>
+            <text x="212" y="220" text-anchor="middle" fill="var(--text-dim)" font-size="11">5</text>
+            <g class="tree-node leaf" transform="translate(298,190)"><circle r="18"/><text>14</text></g>
+            <text x="298" y="220" text-anchor="middle" fill="var(--text-dim)" font-size="11">6</text>
+          </svg>
+        </div>
+      </div>
+      <div class="tip-box" style="text-align:center;">
+        <strong>核心：</strong>完全二叉树的层序遍历顺序 = 数组顺序，通过下标计算就能找到父子，无需指针！
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 4: 上浮 Shift Up — 插入动画 ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">上浮 Shift Up</div>
+    <div class="anim-layout">
+      <div class="anim-tree">
+        <svg width="400" height="320" viewBox="0 0 400 320">
+          <line class="tree-edge" x1="182" y1="48" x2="116" y2="94"/>
+          <line class="tree-edge" x1="218" y1="48" x2="284" y2="94"/>
+          <line class="tree-edge" x1="89" y1="122" x2="60" y2="165"/>
+          <line class="tree-edge" x1="111" y1="122" x2="140" y2="165"/>
+          <line class="tree-edge" x1="289" y1="122" x2="260" y2="165"/>
+          <line class="tree-edge" x1="311" y1="122" x2="340" y2="165"/>
+          <line class="tree-edge" x1="44" y1="197" x2="30" y2="240"/>
+          <g class="tree-node" id="su-node-0" transform="translate(200,35)"><circle r="22"/><text>20</text></g>
+          <text x="200" y="74" text-anchor="middle" fill="var(--text-dim)" font-size="11">0</text>
+          <g class="tree-node" id="su-node-1" transform="translate(100,105)"><circle r="20"/><text>15</text></g>
+          <text x="100" y="144" text-anchor="middle" fill="var(--text-dim)" font-size="11">1</text>
+          <g class="tree-node" id="su-node-2" transform="translate(300,105)"><circle r="20"/><text>18</text></g>
+          <text x="300" y="144" text-anchor="middle" fill="var(--text-dim)" font-size="11">2</text>
+          <g class="tree-node" id="su-node-3" transform="translate(50,180)"><circle r="18"/><text>10</text></g>
+          <text x="50" y="216" text-anchor="middle" fill="var(--text-dim)" font-size="11">3</text>
+          <g class="tree-node" id="su-node-4" transform="translate(150,180)"><circle r="18"/><text>12</text></g>
+          <text x="150" y="216" text-anchor="middle" fill="var(--text-dim)" font-size="11">4</text>
+          <g class="tree-node" id="su-node-5" transform="translate(250,180)"><circle r="18"/><text>16</text></g>
+          <text x="250" y="216" text-anchor="middle" fill="var(--text-dim)" font-size="11">5</text>
+          <g class="tree-node" id="su-node-6" transform="translate(350,180)"><circle r="18"/><text>14</text></g>
+          <text x="350" y="216" text-anchor="middle" fill="var(--text-dim)" font-size="11">6</text>
+          <g class="tree-node" id="su-node-7" transform="translate(25,255)"><circle r="16"/><text>19</text></g>
+          <text x="25" y="285" text-anchor="middle" fill="var(--text-dim)" font-size="11">7</text>
+        </svg>
+      </div>
+      <div class="anim-panel">
+        <div class="result-box" id="su-result">数组：[20, 15, 18, 10, 12, 16, 14, _]</div>
+        <div class="desc-box" id="su-desc">点击「下一步」开始上浮</div>
+        <div><button class="step-btn" id="su-btn">▶ 下一步</button></div>
+        <div class="code-block" style="font-size:0.85rem;padding:14px 20px;margin:0;"><span class="syn-kw">def</span> <span class="syn-func">shift_up</span>(arr, i):
+    <span class="syn-kw">while</span> i > <span class="syn-num">0</span>:
+        p = (i - <span class="syn-num">1</span>) // <span class="syn-num">2</span>
+        <span class="syn-kw">if</span> arr[p] >= arr[i]:
+            <span class="syn-kw">break</span>
+        arr[p], arr[i] = arr[i], arr[p]
+        i = p</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 5: 下沉 Shift Down — 删除堆顶动画 ===== -->
+<div class="slide" data-index="5">
+  <div class="slide-card">
+    <div class="slide-title">下沉 Shift Down</div>
+    <div class="anim-layout">
+      <div class="anim-tree">
+        <svg width="380" height="280" viewBox="0 0 380 280">
+          <line class="tree-edge" x1="172" y1="48" x2="111" y2="93"/>
+          <line class="tree-edge" x1="208" y1="48" x2="269" y2="93"/>
+          <line class="tree-edge" x1="84" y1="122" x2="57" y2="165"/>
+          <line class="tree-edge" x1="106" y1="122" x2="132" y2="165"/>
+          <line class="tree-edge" x1="274" y1="122" x2="247" y2="165"/>
+          <g class="tree-node" id="sd-node-0" transform="translate(190,35)"><circle r="22"/><text>20</text></g>
+          <text x="190" y="74" text-anchor="middle" fill="var(--text-dim)" font-size="11">0</text>
+          <g class="tree-node" id="sd-node-1" transform="translate(95,105)"><circle r="20"/><text>15</text></g>
+          <text x="95" y="144" text-anchor="middle" fill="var(--text-dim)" font-size="11">1</text>
+          <g class="tree-node" id="sd-node-2" transform="translate(285,105)"><circle r="20"/><text>18</text></g>
+          <text x="285" y="144" text-anchor="middle" fill="var(--text-dim)" font-size="11">2</text>
+          <g class="tree-node" id="sd-node-3" transform="translate(47,180)"><circle r="18"/><text>10</text></g>
+          <text x="47" y="222" text-anchor="middle" fill="var(--text-dim)" font-size="11">3</text>
+          <g class="tree-node" id="sd-node-4" transform="translate(142,180)"><circle r="18"/><text>12</text></g>
+          <text x="142" y="222" text-anchor="middle" fill="var(--text-dim)" font-size="11">4</text>
+          <g class="tree-node" id="sd-node-5" transform="translate(237,180)"><circle r="18"/><text>16</text></g>
+          <text x="237" y="222" text-anchor="middle" fill="var(--text-dim)" font-size="11">5</text>
+          <line class="tree-edge" x1="296" y1="122" x2="322" y2="165"/>
+          <g class="tree-node leaf" id="sd-node-6" transform="translate(332,180)"><circle r="18"/><text>14</text></g>
+          <text x="332" y="222" text-anchor="middle" fill="var(--text-dim)" font-size="11">6</text>
+        </svg>
+      </div>
+      <div class="anim-panel">
+        <div class="result-box" id="sd-result">数组：[20, 15, 18, 10, 12, 16, 14] → 删除 20</div>
+        <div class="desc-box" id="sd-desc">点击「下一步」开始下沉</div>
+        <div><button class="step-btn" id="sd-btn">▶ 下一步</button></div>
+        <div class="code-block" style="font-size:0.85rem;padding:14px 20px;margin:0;"><span class="syn-kw">def</span> <span class="syn-func">shift_down</span>(arr, n, i):
+    <span class="syn-kw">while</span> <span class="syn-num">2</span>*i + <span class="syn-num">1</span> < n:
+        l = <span class="syn-num">2</span>*i + <span class="syn-num">1</span>
+        r = <span class="syn-num">2</span>*i + <span class="syn-num">2</span>
+        mx = l
+        <span class="syn-kw">if</span> r < n <span class="syn-kw">and</span> arr[r] > arr[l]:
+            mx = r
+        <span class="syn-kw">if</span> arr[mx] <= arr[i]:
+            <span class="syn-kw">break</span>
+        arr[mx], arr[i] = arr[i], arr[mx]
+        i = mx</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 6: 建堆 — Floyd 建堆法 O(n) ===== -->
+<div class="slide" data-index="6">
+  <div class="slide-card">
+    <div class="slide-title">建堆 — Floyd 建堆法 O(n)</div>
+    <div class="slide-body">
+      <div class="col-card" style="border-color:var(--danger);margin-bottom:16px;">
+        <p><span class="hl-danger">误区警示：</span>逐个插入建堆是 <span class="hl">O(n log n)</span>，不是最优的！</p>
+      </div>
+      <div class="slide-subtitle">正确方法：Floyd 建堆</div>
+      <p>从最后一个非叶子结点 <code>(n//2 - 1)</code> 开始，<span class="hl">自底向上</span>逐个 <code>shift_down</code></p>
+      <div class="col-card" style="margin:16px 0;">
+        <table style="font-size:1.05rem;">
+          <thead><tr><th>对比项</th><th>逐个插入建堆</th><th>Floyd 建堆法</th></tr></thead>
+          <tbody>
+            <tr><td>思路</td><td>空堆开始，逐个插入 + 上浮</td><td>全量放入数组，自底向上下沉</td></tr>
+            <tr><td>单次操作</td><td>shift_up（从叶子到根）</td><td>shift_down（从根方向到叶子）</td></tr>
+            <tr><td>时间复杂度</td><td>O(n log n)</td><td><span class="hl-success">O(n) ⭐</span></td></tr>
+            <tr><td>空间复杂度</td><td>O(1) 额外</td><td>O(1) 额外（原地）</td></tr>
+            <tr><td>实现难度</td><td>简单</td><td>稍复杂</td></tr>
+            <tr><td>实际使用</td><td>不推荐</td><td><span class="hl-success">推荐</span>（堆排序 / 优先队列）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="two-col" style="margin-top:16px;">
+        <div class="col-card">
+          <p style="font-weight:700;color:var(--accent);margin-bottom:8px;">初始数组 [3,1,4,1,5,9,2,6]</p>
+          <p style="font-size:1rem;color:var(--text-dim);margin-bottom:8px;">n=8，最后一个非叶子 = 8//2 - 1 = <span class="hl-warn">3</span></p>
+          <p>从 index <span class="hl">3 → 2 → 1 → 0</span> 依次下沉</p>
+          <ul style="margin-left:20px;font-size:1rem;">
+            <li>index 3 (值1): 左孩子 index7=6。1&lt;6，交换 → [3,1,4,6,5,9,2,1]</li>
+            <li>index 2 (值4): 孩子 9,2 → 9&gt;4，交换 → [3,1,9,6,5,4,2,1]</li>
+            <li>index 1 (值1): 孩子 6,5 → 6&gt;1，交换 → [3,6,9,1,5,4,2,1]。1 到 index3，左孩子=1，停止</li>
+            <li>index 0 (值3): 孩子 6,9 → 9&gt;3，交换 → [9,6,3,1,5,4,2,1]。3 到 index2，孩子 4,2 → 4&gt;3，交换 → [9,6,4,1,5,3,2,1]</li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <p style="font-weight:700;color:var(--success);margin-bottom:8px;">最终大顶堆</p>
+          <div style="display:flex;gap:6px;justify-content:center;margin:10px 0;">
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">9</div><div style="color:var(--text-dim);font-size:0.8rem;">0</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">6</div><div style="color:var(--text-dim);font-size:0.8rem;">1</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">4</div><div style="color:var(--text-dim);font-size:0.8rem;">2</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">1</div><div style="color:var(--text-dim);font-size:0.8rem;">3</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">5</div><div style="color:var(--text-dim);font-size:0.8rem;">4</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">3</div><div style="color:var(--text-dim);font-size:0.8rem;">5</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">2</div><div style="color:var(--text-dim);font-size:0.8rem;">6</div></div>
+            <div style="text-align:center;"><div style="background:var(--bg-card);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-family:monospace;">1</div><div style="color:var(--text-dim);font-size:0.8rem;">7</div></div>
+          </div>
+          <p style="text-align:center;color:var(--success);font-weight:700;font-size:1.2rem;">建堆 = <span class="hl-success">O(n)</span></p>
+        </div>
+      </div>
+      <div class="slide-subtitle">为什么 Floyd 建堆是 O(n)？</div>
+      <table style="font-size:1.05rem;">
+        <thead>
+          <tr><th>节点位置</th><th>数量</th><th>最多下沉层数</th><th>总工作量</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>叶子节点</td><td>n/2</td><td>0</td><td>0</td></tr>
+          <tr><td>倒数第 2 层</td><td>n/4</td><td>1</td><td>n/4</td></tr>
+          <tr><td>倒数第 3 层</td><td>n/8</td><td>2</td><td>2n/8 = n/4</td></tr>
+          <tr><td>倒数第 4 层</td><td>n/16</td><td>3</td><td>3n/16</td></tr>
+          <tr><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+          <tr><td>根节点</td><td>1</td><td>log n</td><td>log n</td></tr>
+        </tbody>
+      </table>
+      <div class="col-card" style="text-align:center;">
+        大量节点在底部，下沉层数少；少量节点在顶部，下沉层数多。<strong>"数量多"和"下沉深"成反比</strong>，总工作量收敛于 <span class="hl-success">O(n)</span>
+      </div>
+      <div class="tip-box">
+        <strong>粗略证明：</strong>高度 h 的结点最多 n/2<sup>h+1</sup> 个，每个下沉最多 h 层。总工作量 = Σ (n/2<sup>h+1</sup>)·h = n·Σ h/2<sup>h+1</sup>，级数收敛于 <span class="hl">O(n)</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 7: TopK 问题 ===== -->
+<div class="slide" data-index="7">
+  <div class="slide-card">
+    <div class="slide-title">TopK 问题 ⭐⭐</div>
+    <div class="slide-body">
+      <p style="text-align:center;font-size:1.3rem;margin-bottom:16px;">从 n 个数中找出 <span class="hl">最大的 K 个</span></p>
+      <table style="font-size:1.05rem;">
+        <thead><tr><th>方法</th><th>时间复杂度</th><th>空间复杂度</th></tr></thead>
+        <tbody>
+          <tr><td>全局排序</td><td>O(n log n)</td><td>O(1) 或 O(n)</td></tr>
+          <tr><td>大顶堆弹 K 次</td><td>O(n + K log n)</td><td>O(n)</td></tr>
+          <tr style="background:rgba(74,222,128,0.08);"><td><span class="hl-success">小顶堆法 ⭐</span></td><td><span class="hl-success">O(n log K)</span></td><td><span class="hl-success">O(K)</span></td></tr>
+        </tbody>
+      </table>
+      <div class="slide-subtitle">小顶堆法详解</div>
+      <ol>
+        <li>用前 <span class="hl">K</span> 个元素建<span class="hl2">小顶堆</span>（堆顶是当前 TopK 中最小的）</li>
+        <li>遍历剩余 <span class="hl">n-K</span> 个元素：若 <span class="hl">x &gt; 堆顶</span>，则替换堆顶并下沉</li>
+        <li>最终堆内即 <span class="hl-success">TopK</span></li>
+      </ol>
+      <div class="code-block" style="font-size:0.88rem;padding:14px 20px;"><span class="syn-kw">def</span> <span class="syn-func">topk</span>(nums, k):
+    <span class="syn-cmt"># Python heapq 默认小顶堆</span>
+    <span class="syn-kw">import</span> heapq
+    heap = nums[:k]
+    heapq.heapify(heap)          <span class="syn-cmt"># O(k)</span>
+    <span class="syn-kw">for</span> x <span class="syn-kw">in</span> nums[k:]:
+        <span class="syn-kw">if</span> x > heap[<span class="syn-num">0</span>]:
+            heapq.heapreplace(heap, x)  <span class="syn-cmt"># O(log k)</span>
+    <span class="syn-kw">return</span> heap</div>
+      <div class="col-card" style="margin-top:12px;text-align:center;">
+        <p>时间 = O(k) + (n-k)·O(log k) = <span class="hl-success">O(n log k)</span>　|　空间 = <span class="hl-success">O(k)</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 8: 优先队列 ===== -->
+<div class="slide" data-index="8">
+  <div class="slide-card">
+    <div class="slide-title">优先队列</div>
+    <div class="slide-body">
+      <div class="slide-subtitle">抽象数据类型（ADT）</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="col-card" style="flex:1;min-width:180px;text-align:center;"><p><span class="hl">push(x)</span></p><p style="font-size:1rem;color:var(--text-dim);">入队</p></div>
+        <div class="col-card" style="flex:1;min-width:180px;text-align:center;"><p><span class="hl">pop()</span></p><p style="font-size:1rem;color:var(--text-dim);">出队（优先级最高）</p></div>
+        <div class="col-card" style="flex:1;min-width:180px;text-align:center;"><p><span class="hl">top()</span></p><p style="font-size:1rem;color:var(--text-dim);">看堆顶，不出队</p></div>
+      </div>
+      <table style="font-size:1.05rem;margin-bottom:16px;">
+        <thead><tr><th>特性</th><th>普通队列</th><th>优先队列</th></tr></thead>
+        <tbody>
+          <tr><td>出队顺序</td><td>FIFO（先进先出）</td><td>按优先级（堆顶先出）</td></tr>
+          <tr><td>底层实现</td><td>链表 / 数组</td><td><span class="hl-success">堆（最优）</span></td></tr>
+          <tr><td>push / pop</td><td>O(1)</td><td><span class="hl-success">O(log n)</span></td></tr>
+          <tr><td>top</td><td>O(1)</td><td><span class="hl-success">O(1)</span></td></tr>
+        </tbody>
+      </table>
+      <div class="slide-subtitle">应用场景</div>
+      <ul>
+        <li><span class="hl">OS 进程调度</span>：高优先级任务先执行</li>
+        <li><span class="hl">Dijkstra 最短路径</span>：每次取距离最小的结点</li>
+        <li><span class="hl">合并 K 个有序链表</span>：K 路归并，每次取最小头结点</li>
+        <li><span class="hl">任务调度 / 定时器</span>：最近到期的任务先触发</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 9: 附录：Python 协议类 Protocol ===== -->
+<div class="slide" data-index="9">
+  <div class="slide-card">
+    <div class="slide-title">附录：Python 协议类 Protocol</div>
+    <div class="slide-body">
+      <div style="text-align:center;color:var(--text-dim);margin-bottom:16px;font-size:1.1rem;">typing.Protocol · 结构子类型 · 鸭子类型的正规化</div>
+
+      <div class="slide-subtitle">什么是 Protocol？</div>
+      <ul>
+        <li><span class="hl">PEP 544</span> 引入，Python <span class="hl">3.8+</span> 标准库提供</li>
+        <li>属于<strong>结构性子类型（Structural Subtyping）</strong>：不检查继承关系，只检查<strong>“有没有对应的方法/属性”</strong></li>
+        <li>相当于把 Python 的<span class="hl2">鸭子类型</span>用静态类型系统“正规化”</li>
+      </ul>
+
+      <div class="slide-subtitle">Protocol vs ABC 对比</div>
+      <div class="col-card" style="margin:12px 0;">
+        <table style="font-size:1.05rem;">
+          <thead><tr><th>维度</th><th>ABC（抽象基类）</th><th>Protocol（协议类）</th></tr></thead>
+          <tbody>
+            <tr><td>继承方式</td><td>必须显式继承 <code>class C(A)</code></td><td>无需继承，自动识别</td></tr>
+            <tr><td>检查时机</td><td>运行时 <code>isinstance()</code></td><td>静态类型检查器（mypy）</td></tr>
+            <tr><td>子类型判定</td><td>名义子类型（Nominal）</td><td>结构子类型（Structural）</td></tr>
+            <tr><td>性能影响</td><td>运行时有一定开销</td><td>零运行时开销</td></tr>
+            <tr><td>类比</td><td>“必须认爹”</td><td>“长得像就行”</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slide-subtitle">代码示例</div>
+      <div class="two-col" style="gap:24px;align-items:start;">
+        <div class="code-block" style="font-size:0.88rem;padding:16px 20px;"><span class="syn-kw">from</span> typing <span class="syn-kw">import</span> Protocol
+
+<span class="syn-cmt"># 1. 定义协议</span>
+<span class="syn-kw">class</span> <span class="syn-cls">PushPop</span>(Protocol):
+    <span class="syn-kw">def</span> <span class="syn-func">push</span>(self, x: int) -> <span class="syn-blt">None</span>: ...
+    <span class="syn-kw">def</span> <span class="syn-func">pop</span>(self) -> int: ...
+
+<span class="syn-cmt"># 2. 实现类（不继承 PushPop！）</span>
+<span class="syn-kw">class</span> <span class="syn-cls">MyHeap</span>:
+    <span class="syn-kw">def</span> <span class="syn-func">push</span>(self, x: int) -> <span class="syn-blt">None</span>: ...
+    <span class="syn-kw">def</span> <span class="syn-func">pop</span>(self) -> int: ...
+
+<span class="syn-cmt"># 3. 静态类型检查通过</span>
+<span class="syn-kw">def</span> <span class="syn-func">use</span>(q: PushPop) -> <span class="syn-blt">None</span>:
+    q.push(<span class="syn-num">1</span>)
+
+h = MyHeap()
+use(h)   <span class="syn-cmt"># ✔ mypy 认可，运行时无感知</span></div>
+        <div>
+          <div class="slide-subtitle" style="margin-top:0;">为什么优先队列用 Protocol 更好？</div>
+          <ul style="margin-left:20px;">
+            <li><span class="hl">零侵入</span>：已有类无需改继承链即可充当优先队列</li>
+            <li><span class="hl">解耦</span>：ADT 定义与实现彻底分离</li>
+            <li><span class="hl">天然符合</span>：任何带 <code>push/pop</code> 的类都自动满足</li>
+          </ul>
+          <div class="tip-box" style="margin-top:14px;">
+            <strong>一句话总结：</strong>ABC 是“<span class="hl-danger">必须认爹</span>”，Protocol 是“<span class="hl-success">长得像就行</span>”。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== Slide 10: 作业 ===== -->
+<div class="slide" data-index="10">
+  <div class="slide-card">
+    <div class="slide-title">作业</div>
+    <div class="slide-body">
+      <div class="slide-subtitle">题：双堆求中位数</div>
+      <p>设计一个数据结构 <code>MedianFinder</code>，支持两个操作：</p>
+      <ul>
+        <li><code>addNum(num)</code>：添加一个整数</li>
+        <li><code>findMedian()</code>：返回当前所有数字的中位数</li>
+      </ul>
+      <p>要求用<strong>两个堆</strong>实现（一个大顶堆、一个小顶堆），并分析时间复杂度。</p>
+      <div class="code-block">mf = MedianFinder()
+mf.addNum(3)      # 中位数: 3
+mf.addNum(1)      # 中位数: 2
+mf.addNum(4)      # 中位数: 3
+mf.addNum(1)      # 中位数: 2
+mf.addNum(5)      # 中位数: 3</div>
+      <div class="tip-box">
+        <strong>提示：</strong>大顶堆存较小的一半，小顶堆存较大的一半，始终保持两堆大小平衡。
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-container -->
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 9.09%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total">11</span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+})();
+
+/* ===================== Helpers ===================== */
+function updateStack(container, items) {
+  container.innerHTML = '';
+  if (items.length === 0) {
+    container.innerHTML = '<span style="color:var(--text-dim);font-size:0.9rem;">空</span>';
+    return;
+  }
+  items.slice().reverse().forEach(item => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg-card);border:1px solid var(--accent);border-radius:6px;padding:5px 12px;margin-bottom:5px;text-align:center;font-family:monospace;font-size:0.9rem;color:var(--text-main);min-width:50px;';
+    div.textContent = item;
+    container.appendChild(div);
+  });
+}
+
+function updateQueue(container, items) {
+  container.innerHTML = '';
+  if (items.length === 0) {
+    container.innerHTML = '<span style="color:var(--text-dim);font-size:0.9rem;">空</span>';
+    return;
+  }
+  container.style.display = 'flex';
+  container.style.gap = '8px';
+  container.style.flexWrap = 'wrap';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg-card);border:1px solid var(--accent);border-radius:6px;padding:5px 12px;text-align:center;font-family:monospace;font-size:0.9rem;color:var(--text-main);min-width:36px;';
+    div.textContent = item;
+    container.appendChild(div);
+  });
+}
+
+/* ===================== Slide 5: Shift Up Animation ===================== */
+(function() {
+  const slide = document.querySelector('.slide[data-index="4"]');
+  const btn = slide.querySelector('#su-btn');
+  const resultBox = slide.querySelector('#su-result');
+  const descBox = slide.querySelector('#su-desc');
+
+  const steps = [
+    { vals: ['20','15','18','10','12','16','14','19'], ins: 7, act: null, arr: '[20, 15, 18, 10, 12, 16, 14, 19]', desc: '① 19 插入末尾 index 7（绿色高亮）' },
+    { vals: ['20','15','18','19','12','16','14','10'], ins: 3, act: null, arr: '[20, 15, 18, 19, 12, 16, 14, 10]', desc: '② 19 > 父节点 10(index3)，交换位置' },
+    { vals: ['20','19','18','15','12','16','14','10'], ins: 1, act: null, arr: '[20, 19, 18, 15, 12, 16, 14, 10]', desc: '③ 19 > 父节点 15(index1)，交换位置' },
+    { vals: ['20','19','18','15','12','16','14','10'], ins: null, act: 1, arr: '[20, 19, 18, 15, 12, 16, 14, 10]', desc: '④ 19 < 根 20(index0)，停止（金色高亮最终位置）' }
+  ];
+
+  function setNodeClass(idx, cls, on) {
+    const n = slide.querySelector('#su-node-' + idx);
+    if (!n) return;
+    if (on) n.classList.add(cls); else n.classList.remove(cls);
+  }
+
+  function setNodeText(idx, txt) {
+    const n = slide.querySelector('#su-node-' + idx + ' text');
+    if (n) n.textContent = txt;
+  }
+
+  function reset() {
+    slide.dataset.step = '0';
+    slide.dataset.done = 'false';
+    btn.classList.remove('done');
+    btn.textContent = '▶ 下一步';
+    for (let i = 0; i < 8; i++) {
+      setNodeClass(i, 'inserted', false);
+      setNodeClass(i, 'active-step', false);
+    }
+    setNodeText(1, '15');
+    setNodeText(3, '10');
+    setNodeText(7, '19');
+    resultBox.textContent = '数组：[20, 15, 18, 10, 12, 16, 14, _]';
+    descBox.textContent = '点击「下一步」开始上浮';
+  }
+
+  function render(s) {
+    for (let i = 0; i < 8; i++) {
+      setNodeClass(i, 'inserted', false);
+      setNodeClass(i, 'active-step', false);
+      setNodeText(i, s.vals[i]);
+    }
+    if (s.ins !== null) setNodeClass(s.ins, 'inserted', true);
+    if (s.act !== null) setNodeClass(s.act, 'active-step', true);
+    resultBox.textContent = '数组：' + s.arr;
+    descBox.textContent = s.desc;
+  }
+
+  btn.addEventListener('click', function() {
+    let step = parseInt(slide.dataset.step || '0');
+    const done = slide.dataset.done === 'true';
+    if (done) { reset(); return; }
+    if (step < steps.length) {
+      render(steps[step]);
+      step++;
+      slide.dataset.step = String(step);
+      if (step >= steps.length) {
+        slide.dataset.done = 'true';
+        btn.classList.add('done');
+        btn.textContent = '↺ 重来';
+      }
+    }
+  });
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (slide.classList.contains('active')) reset();
+      }
+    });
+  });
+  observer.observe(slide, { attributes: true });
+})();
+
+/* ===================== Slide 6: Shift Down Animation ===================== */
+(function() {
+  const slide = document.querySelector('.slide[data-index="5"]');
+  const btn = slide.querySelector('#sd-btn');
+  const resultBox = slide.querySelector('#sd-result');
+  const descBox = slide.querySelector('#sd-desc');
+
+  const steps = [
+    { vals: ['14','15','18','10','12','16'], ins: 0, act: null, arr: '[14, 15, 18, 10, 12, 16]', desc: '① 删除 20，末尾 14 放到堆顶' },
+    { vals: ['18','15','14','10','12','16'], ins: 2, act: null, arr: '[18, 15, 14, 10, 12, 16]', desc: '② 14 和左右孩子(15,18)比较，18>14，交换' },
+    { vals: ['18','15','16','10','12','14'], ins: 5, act: null, arr: '[18, 15, 16, 10, 12, 14]', desc: '③ 14 和新孩子 16 比较，16>14，交换' },
+    { vals: ['18','15','16','10','12','14'], ins: null, act: 5, arr: '[18, 15, 16, 10, 12, 14]', desc: '④ 14 到达叶子，满足堆序，停止' }
+  ];
+
+  function setNodeClass(idx, cls, on) {
+    const n = slide.querySelector('#sd-node-' + idx);
+    if (!n) return;
+    if (on) n.classList.add(cls); else n.classList.remove(cls);
+  }
+
+  function setNodeText(idx, txt) {
+    const n = slide.querySelector('#sd-node-' + idx + ' text');
+    if (n) n.textContent = txt;
+  }
+
+  function reset() {
+    slide.dataset.step = '0';
+    slide.dataset.done = 'false';
+    btn.classList.remove('done');
+    btn.textContent = '▶ 下一步';
+    for (let i = 0; i < 6; i++) {
+      setNodeClass(i, 'inserted', false);
+      setNodeClass(i, 'active-step', false);
+    }
+    setNodeText(0, '20');
+    setNodeText(2, '18');
+    setNodeText(5, '16');
+    resultBox.textContent = '数组：[20, 15, 18, 10, 12, 16, 14] → 删除 20';
+    descBox.textContent = '点击「下一步」开始下沉';
+    slide.querySelector('#sd-node-6').style.opacity = '1';
+  }
+
+  function render(s) {
+    for (let i = 0; i < 6; i++) {
+      setNodeClass(i, 'inserted', false);
+      setNodeClass(i, 'active-step', false);
+      setNodeText(i, s.vals[i]);
+    }
+    if (s.ins !== null) setNodeClass(s.ins, 'inserted', true);
+    if (s.act !== null) setNodeClass(s.act, 'active-step', true);
+    slide.querySelector('#sd-node-6').style.opacity = '0';
+    resultBox.textContent = '数组：' + s.arr;
+    descBox.textContent = s.desc;
+  }
+
+  btn.addEventListener('click', function() {
+    let step = parseInt(slide.dataset.step || '0');
+    const done = slide.dataset.done === 'true';
+    if (done) { reset(); return; }
+    if (step < steps.length) {
+      render(steps[step]);
+      step++;
+      slide.dataset.step = String(step);
+      if (step >= steps.length) {
+        slide.dataset.done = 'true';
+        btn.classList.add('done');
+        btn.textContent = '↺ 重来';
+      }
+    }
+  });
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (slide.classList.contains('active')) reset();
+      }
+    });
+  });
+  observer.observe(slide, { attributes: true });
+})();
+</script>
+
+</body>
+</html>
