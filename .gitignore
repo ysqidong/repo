@@ -21,3 +21,4 @@ build/
 .python-version
 uv.lock
 pyproject.toml
+id_rsa.pub
