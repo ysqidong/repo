@@ -1,3 +1,8 @@
+"""
+data_structure_3：哈希表（链地址法）
+学号 24375352  王子昂
+"""
+
 class Multipledict:
     def __init__(self,size: int = 100):
         """哈希表
