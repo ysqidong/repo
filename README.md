@@ -11,7 +11,7 @@
 ```
 repo/
 ├── algorithms/          # 数据结构与算法
-│   ├── assignments/     # 四次作业
+│   ├── assignments/     # 8 次作业（data_structure_1~8）
 │   ├── code/            # 课堂代码练习
 │   ├── notes/           # 手写笔记
 │   ├── data/            # 课件文本资料（25 个专题）
@@ -21,7 +21,7 @@ repo/
 │   ├── notes/           # Shell / 网络 / Docker 笔记
 │   └── route_test/      # FastAPI 路由练习
 │
-└── .vscode/             # VS Code 配置
+└── .gitignore           # 排除密钥、缓存、IDE 文件
 ```
 
 ---
@@ -32,10 +32,16 @@ repo/
 
 | 文件 | 内容 | 涉及知识点 |
 |------|------|-----------|
-| `第二次作业.py` | 集合类 SimpleSet | 列表、插入/删除/查询 |
-| `第三次作业.py` | Multipledict 哈希表 | 哈希、字典、O(1) 查找 |
-| `4.9作业.py` | 优化快速排序 | 随机轴选择、分治 |
-| `5.29作业.md` | 二叉搜索树 | BST 构建、节点操作 |
+| `data_structure_1.py` | DeleteItem（手动前移） | 列表、按下标删除 |
+| `data_structure_2.py` | SimpleSet 集合类 | 插入 / 查找 / 删除 |
+| `data_structure_3.py` | Multipledict 哈希表 | 链地址法、O(1) 查找 |
+| `data_structure_4.py` | 优化快速排序 | 随机轴 + 三路分治 |
+| `data_structure_5.py` | 单链表实现 | 节点插入 / 删除 / 遍历 |
+| `data_structure_6.py` | 链表反转 + 环检测 | 快慢指针、原地反转 |
+| `data_structure_7.py` | 二叉树层序遍历 | BFS、队列 |
+| `data_structure_8.py` | BST 删除策略 | 前驱 / 后继替换 |
+| `4.23作业/` | 链表专项（截图） | 补充材料 |
+| `5.29作业.md` | BST 笔记 | 二叉搜索树要点 |
 
 ### 代码练习（`algorithms/code/`）
 
@@ -50,7 +56,7 @@ repo/
 
 ### 课件覆盖（`algorithms/data/`）
 
-25 个专题文本：Python 基础 → 排序（冒泡/选择/插入/快排）→ 递归 → 栈/队列 → 哈希 → 列表 → 数组 → 树（二叉树/BST/AVL/堆）→ 图 → 复杂度分析 → 分词/索引/缓存 → 数据库 → Web — 覆盖完整的数据结构课程体系。
+25 个专题文本：Python 基础 → 排序（冒泡/选择/插入/快排）→ 递归 → 栈/队列 → 哈希 → 列表 → 数组 → 树（二叉树/BST/AVL/堆）→ 图 → 复杂度分析 → 分词/索引/缓存 → 数据库 → Web。
 
 ---
 
@@ -60,32 +66,18 @@ repo/
 
 | 文件 | 内容 |
 |------|------|
-| `笔记.txt` | Shell 基础（Ctrl+C/D、终端操作、Python 集合库引用） |
-| `网络基础笔记.txt` | DNS、网络协议基础 |
-| `docker.md` | Docker 概念与操作入门 |
+| `笔记.txt` | Shell 基础 |
+| `网络基础笔记.txt` | DNS、网络协议 |
+| `docker.md` | Docker 概念与操作 |
 
 ### 路由练习（`linux/route_test/`）
 
-`main.py` — FastAPI 完整路由实践，涵盖 8 种路由模式：基础 GET、路径参数、查询参数、POST 请求体（Pydantic 模型）、PUT 更新、DELETE、状态码控制、参数验证。
-
----
-
-## ⚠️ 安全提示
-
-仓库根目录下 `id_rsa.pub` **不应公开**，建议：
-
-```bash
-git rm --cached id_rsa.pub
-echo "id_rsa.pub" >> .gitignore
-git commit -m "移除公钥文件"
-```
-
-虽然公钥本身危害较小，但暴露用户名和机器指纹仍是不好的习惯。
+`main.py` — FastAPI 路由实践：GET、路径参数、查询参数、POST（Pydantic）、PUT、DELETE、状态码控制、参数验证。
 
 ---
 
 ## 🛠 运行环境
 
 - Python 3.10+
-- 算法作业：纯标准库，无需额外依赖
+- 算法作业：纯标准库
 - Linux 路由练习：`pip install fastapi "uvicorn[standard]"`
