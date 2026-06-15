@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图（Graph）数据结构 — 第四章：最短路径</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0f172a;
+    --bg-slide: #1e293b;
+    --bg-card: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #e2e8f0;
+    --success: #4ade80;
+    --warn: #fbbf24;
+    --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+  }
+
+  /* ===== Slide Container ===== */
+  #slides-container {
+    position: relative;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px 140px 80px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  /* ===== Slide Content Card ===== */
+  .slide-card {
+    background: var(--bg-slide);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 220px);
+    padding: 40px 50px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ===== Typography ===== */
+  .slide-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 36px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+
+  .slide-subtitle {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .slide-body {
+    font-size: 1.35rem;
+    line-height: 1.9;
+    color: var(--text-bright);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== Lists ===== */
+  .slide-body ul, .slide-body ol {
+    margin-left: 28px;
+    margin-bottom: 16px;
+  }
+
+  .slide-body li {
+    margin-bottom: 12px;
+  }
+
+  .slide-body li::marker {
+    color: var(--accent);
+  }
+
+  /* ===== Highlight ===== */
+  .hl {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .hl2 {
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+
+  /* ===== Code / Mono ===== */
+  code, .mono {
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: var(--accent);
+  }
+
+  .code-block {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 28px;
+    margin: 16px 0;
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--text-bright);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1.2rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    text-align: left;
+  }
+
+  th {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  tr:hover {
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  /* ===== Tree SVG ===== */
+  .tree-svg {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+  }
+
+  .tree-node circle {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+
+  .tree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 2.5;
+    fill: none;
+  }
+
+  .tree-node.leaf circle {
+    stroke: var(--success);
+  }
+
+  .tree-node.highlight circle {
+    stroke: var(--warn);
+    stroke-width: 3.5;
+    fill: rgba(251, 191, 36, 0.15);
+  }
+
+  /* ===== Two Column Layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .col-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+  }
+
+  /* ===== Tip / Note Box ===== */
+  .tip-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+    font-size: 1.15rem;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ===== Answer Box ===== */
+  .answer-box {
+    background: rgba(74, 222, 128, 0.08);
+    border-left: 4px solid var(--success);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 12px 0;
+  }
+
+  /* ===== Controls ===== */
+  #controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+    padding: 0 40px;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+
+  .ctrl-btn svg {
+    width: 18px; height: 18px;
+    fill: currentColor;
+  }
+
+  #page-indicator {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #page-indicator .current {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  /* ===== Progress Bar ===== */
+  #progress-bar {
+    position: fixed;
+    bottom: 80px; left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Key hint ===== */
+  .key-hint {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    z-index: 90;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1100px) {
+    .slide { padding: 40px 30px 140px 30px; }
+    .slide-card { padding: 30px 36px; }
+    .slide-title { font-size: 2.2rem; }
+    .slide-body { font-size: 1.15rem; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 20px 16px 140px 16px; }
+    .slide-card { padding: 20px 22px; }
+    .slide-title { font-size: 1.7rem; margin-bottom: 20px; }
+    .slide-body { font-size: 1rem; }
+    .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; }
+    table { font-size: 0.95rem; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== SLIDES ======================== -->
+<div id="slides-container">
+
+<!-- ===== Slide 0: 标题页 ===== -->
+<div class="slide" data-index="0">
+  <div class="slide-card" style="justify-content:center;align-items:center;text-align:center;">
+    <div class="slide-title" style="font-size:3.2rem;margin-bottom:16px;">第四章 最短路径</div>
+    <div style="font-size:1.8rem;color:var(--accent2);margin-bottom:40px;font-weight:500;">Single-Source Shortest Path · Bellman-Ford · Dijkstra</div>
+
+    <svg class="tree-svg" width="520" height="300" viewBox="0 0 520 300">
+      <defs>
+        <marker id="arrow0" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+        </marker>
+      </defs>
+      <!-- edges with weights -->
+      <line class="tree-edge" x1="250" y1="50" x2="120" y2="140" marker-end="url(#arrow0)"/>
+      <text x="175" y="85" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">2</text>
+
+      <line class="tree-edge" x1="250" y1="50" x2="380" y2="140" marker-end="url(#arrow0)"/>
+      <text x="325" y="85" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">4</text>
+
+      <line class="tree-edge" x1="120" y1="140" x2="380" y2="140" marker-end="url(#arrow0)"/>
+      <text x="250" y="125" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">1</text>
+
+      <line class="tree-edge" x1="120" y1="140" x2="250" y2="240" marker-end="url(#arrow0)"/>
+      <text x="175" y="200" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">7</text>
+
+      <line class="tree-edge" x1="380" y1="140" x2="380" y2="240" marker-end="url(#arrow0)"/>
+      <text x="395" y="190" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">3</text>
+
+      <line class="tree-edge" x1="250" y1="240" x2="380" y2="240" marker-end="url(#arrow0)"/>
+      <text x="315" y="225" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">2</text>
+
+      <!-- nodes -->
+      <g class="tree-node" transform="translate(250,50)"><circle r="28"/><text>A</text></g>
+      <g class="tree-node" transform="translate(120,140)"><circle r="28"/><text>B</text></g>
+      <g class="tree-node" transform="translate(380,140)"><circle r="28"/><text>C</text></g>
+      <g class="tree-node" transform="translate(250,240)"><circle r="28"/><text>D</text></g>
+      <g class="tree-node" transform="translate(380,240)"><circle r="28"/><text>E</text></g>
+    </svg>
+
+    <div style="font-size:1.2rem;color:var(--text-dim);margin-top:24px;letter-spacing:2px;">
+      单源最短路径 · Bellman-Ford · Dijkstra · 理念对比
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 1: 最短路径问题 ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">最短路径问题</div>
+    <div class="slide-subtitle">从一个起点到所有其他顶点的最短距离</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div class="col-card">
+          <ul>
+            <li><span class="hl">单源最短路径：</span>给定一个起点，求到所有其他顶点的最短距离</li>
+            <li><span class="hl">经典解法有两种：</span>
+              <ul style="margin-top:8px;">
+                <li><span class="hl2">Bellman-Ford</span>：通用型，能处理负权边</li>
+                <li><span class="hl-success">Dijkstra</span>：贪心型，非负权图更快</li>
+              </ul>
+            </li>
+            <li>两种算法的核心操作都是<span class="hl">松弛（Relaxation）</span>：<code>dist[v] = min(dist[v], dist[u] + w)</code></li>
+          </ul>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:12px;">核心问题：起点 A 到其他点的最短距离</p>
+          <svg class="tree-svg" width="400" height="260" viewBox="0 0 400 260">
+            <defs>
+              <marker id="arrow1" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+              </marker>
+            </defs>
+            <!-- A(200,50) -> B(100,130) weight 2 -->
+            <line class="tree-edge" x1="200" y1="50" x2="100" y2="130" marker-end="url(#arrow1)"/>
+            <text x="140" y="80" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">2</text>
+
+            <!-- A(200,50) -> C(300,130) weight 6 -->
+            <line class="tree-edge" x1="200" y1="50" x2="300" y2="130" marker-end="url(#arrow1)"/>
+            <text x="260" y="80" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">6</text>
+
+            <!-- B(100,130) -> D(200,210) weight 3 (highlighted shortest path) -->
+            <line class="tree-edge" x1="100" y1="130" x2="200" y2="210" marker-end="url(#arrow1)" style="stroke:var(--success);stroke-width:3.5"/>
+            <text x="140" y="180" fill="var(--success)" font-size="13" font-weight="600" text-anchor="middle">3</text>
+
+            <!-- B(100,130) -> C(300,130) weight 2 -->
+            <line class="tree-edge" x1="100" y1="130" x2="300" y2="130" marker-end="url(#arrow1)"/>
+            <text x="200" y="118" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">2</text>
+
+            <!-- C(300,130) -> D(200,210) weight 1 -->
+            <line class="tree-edge" x1="300" y1="130" x2="200" y2="210" marker-end="url(#arrow1)"/>
+            <text x="260" y="180" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">1</text>
+
+            <!-- nodes -->
+            <g class="tree-node highlight" transform="translate(200,50)"><circle r="26"/><text>A</text></g>
+            <g class="tree-node" transform="translate(100,130)"><circle r="26"/><text>B</text></g>
+            <g class="tree-node" transform="translate(300,130)"><circle r="26"/><text>C</text></g>
+            <g class="tree-node" transform="translate(200,210)"><circle r="26"/><text>D</text></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:20px;">
+        <strong>💡 关键分歧：</strong>能不能处理<span class="hl-warn">负权边</span>？这决定了你应该选哪个算法
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 2: Bellman-Ford 算法 ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">Bellman-Ford 算法</div>
+    <div class="slide-subtitle">逐轮松弛，地毯式逼近 —— 通用但慢</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div class="col-card">
+          <ul>
+            <li><span class="hl">核心思想：</span>对图中的<span class="hl2">每条边</span>，重复进行 <span class="hl">V-1 轮</span>松弛</li>
+            <li>每一轮松弛后，距离数组都会<span class="hl2">更接近</span>真实最短距离</li>
+            <li>经过 V-1 轮后，所有最短路径都被确定（因为最长简单路径最多 V-1 条边）</li>
+            <li>额外再做一轮：如果还能松弛，说明存在<span class="hl-warn">负权环</span></li>
+            <li>时间复杂度：<span class="hl-warn">O(V·E)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="code-block">INF = float('inf')
+
+def bellman_ford(graph, V, start):
+    dist = [INF] * V
+    dist[start] = 0
+    # 对每条边松弛 V-1 轮
+    for _ in range(V - 1):
+        for u in range(V):
+            for v, w in graph[u]:
+                if dist[u] + w < dist[v]:
+                    dist[v] = dist[u] + w
+    # 检测负权环
+    for u in range(V):
+        for v, w in graph[u]:
+            if dist[u] + w < dist[v]:
+                return None  # 存在负权环
+    return dist</div>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:16px;">
+        <strong>💡 Bellman-Ford 的哲学：</strong>不假设任何前提，<span class="hl">老老实实地枚举所有边</span>，用足够的轮数确保正确性
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 3: Dijkstra 算法 ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">Dijkstra 算法</div>
+    <div class="slide-subtitle">贪心选择 + 松弛 —— 快但有前提</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div class="col-card">
+          <ul>
+            <li><span class="hl">核心思想：</span>每次从<span class="hl2">未确定的顶点</span>中，选出距离起点<span class="hl">最近</span>的一个</li>
+            <li>选中的顶点距离已确定（<span class="hl2">贪心</span>），用它去松弛邻居</li>
+            <li>关键前提：<span class="hl-warn">边权必须非负</span>，否则贪心策略会失效</li>
+            <li>用优先队列（堆）取最近顶点，时间复杂度：<span class="hl-success">O((V+E) log V)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="code-block">INF = float('inf')
+import heapq
+
+def dijkstra(graph, V, start):
+    dist = [INF] * V
+    dist[start] = 0
+    pq = [(0, start)]
+    while pq:
+        d, u = heapq.heappop(pq)
+        if d > dist[u]:
+            continue  # 跳过过期数据
+        for v, w in graph[u]:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                heapq.heappush(pq, (dist[v], v))
+    return dist</div>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:16px;">
+        <strong>💡 Dijkstra 的哲学：</strong>利用「<span class="hl">边权非负</span>」这个条件，每次只做<span class="hl2">最有把握</span>的决定，不做无用功
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 4: 理念对比 ⭐ ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">理念对比 ⭐</div>
+    <div class="slide-subtitle">地毯式搜索 vs 策略性贪心</div>
+    <div class="slide-body">
+      <table>
+        <tr><th>维度</th><th>Bellman-Ford</th><th>Dijkstra</th></tr>
+        <tr><td><span class="hl">核心策略</span></td><td>枚举所有边，V-1 轮松弛</td><td>每次选距离最近的顶点</td></tr>
+        <tr><td><span class="hl">前提假设</span></td><td>无任何假设（通用型）</td><td>边权必须非负</td></tr>
+        <tr><td><span class="hl">负权边</span></td><td><span class="hl-success">✅ 可以处理</span></td><td><span class="hl-warn">❌ 不能处理</span></td></tr>
+        <tr><td><span class="hl">负权环检测</span></td><td><span class="hl-success">✅ 可以检测</span></td><td><span class="hl-warn">❌ 无法检测</span></td></tr>
+        <tr><td><span class="hl">时间复杂度</span></td><td><span class="hl-warn">O(V·E)</span></td><td><span class="hl-success">O((V+E) log V)</span></td></tr>
+        <tr><td><span class="hl">适用场景</span></td><td>含负权边、需检测环</td><td>非负权图、追求速度</td></tr>
+      </table>
+
+      <div class="two-col" style="margin-top:24px;">
+        <div class="col-card" style="text-align:center;">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:10px;font-size:1.3rem;">🔍 Bellman-Ford 类比</p>
+          <p>像<span class="hl">地毯式排查</span>——不遗漏任何可能，确保结果正确，但耗费时间</p>
+        </div>
+        <div class="col-card" style="text-align:center;">
+          <p style="color:var(--accent2);font-weight:600;margin-bottom:10px;font-size:1.3rem;">🎯 Dijkstra 类比</p>
+          <p>像<span class="hl2">策略性搜索</span>——利用已知条件做最优决策，高效但依赖前提</p>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:20px;text-align:center;font-size:1.2rem;">
+        <strong>核心差异：</strong>Bellman-Ford 用<span class="hl">「枚举」</span>换<span class="hl2">「通用」</span>；Dijkstra 用<span class="hl">「前提」</span>换<span class="hl2">「效率」</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 5: 负权边：分水岭 ===== -->
+<div class="slide" data-index="5">
+  <div class="slide-card">
+    <div class="slide-title">负权边：分水岭</div>
+    <div class="slide-subtitle">为什么一条负权边就能决定算法选择？</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div class="col-card">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:12px;">Bellman-Ford 如何处理？</p>
+          <ul>
+            <li>第 1 轮松弛后：A→B = 2，A→C = 5</li>
+            <li>第 2 轮松弛后：发现 C→B = -10，更新 A→C→B = <span class="hl-success">-5</span></li>
+            <li>多轮松弛能<span class="hl-success">不断修正</span>之前的结果</li>
+          </ul>
+          <p style="color:var(--accent2);font-weight:600;margin-top:16px;margin-bottom:12px;">Dijkstra 为什么不行？</p>
+          <ul>
+            <li>第 1 步确定 B = 2 后<span class="hl-warn">「锁定」</span></li>
+            <li>后续发现 A→C→B = -5 时，B 已无法更新</li>
+            <li>贪心策略的前提（非负权）被打破了</li>
+          </ul>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:12px;">反例：3 顶点带负权边</p>
+          <svg class="tree-svg" width="300" height="220" viewBox="0 0 300 220">
+            <defs>
+              <marker id="arrow2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+              </marker>
+            </defs>
+            <!-- A(150,50) -> B(80,150) weight 2 -->
+            <line class="tree-edge" x1="150" y1="50" x2="80" y2="150" marker-end="url(#arrow2)"/>
+            <text x="105" y="90" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">2</text>
+
+            <!-- A(150,50) -> C(220,150) weight 5 -->
+            <line class="tree-edge" x1="150" y1="50" x2="220" y2="150" marker-end="url(#arrow2)"/>
+            <text x="195" y="90" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">5</text>
+
+            <!-- C(220,150) -> B(80,150) weight -10 -->
+            <line class="tree-edge" x1="220" y1="150" x2="80" y2="150" marker-end="url(#arrow2)"/>
+            <text x="150" y="140" fill="var(--success)" font-size="14" font-weight="600" text-anchor="middle">-10</text>
+
+            <!-- nodes -->
+            <g class="tree-node" transform="translate(150,50)"><circle r="26"/><text>A</text></g>
+            <g class="tree-node" transform="translate(80,150)"><circle r="26"/><text>B</text></g>
+            <g class="tree-node" transform="translate(220,150)"><circle r="26"/><text>C</text></g>
+          </svg>
+          <p style="color:var(--text-dim);font-size:1.05rem;margin-top:8px;">
+            Dijkstra 确定 <span class="hl-warn">B = 2</span>，但真实最短是 <span class="hl-success">A→C→B = -5</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:16px;border-left-color:var(--warn);background:rgba(251,191,36,0.08);">
+        <strong style="color:var(--warn);">💡 选择原则：</strong>图中有负权边 → 用 <span class="hl">Bellman-Ford</span>；无非负权边 → 用 <span class="hl2">Dijkstra</span> 更快
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 6: 作业 ===== -->
+<div class="slide" data-index="6">
+  <div class="slide-card">
+    <div class="slide-title">作业</div>
+    <div class="slide-body">
+      <div class="answer-box">
+        <p style="margin-bottom:16px;">给定以下 <span class="hl">5 个顶点的带权有向图</span>，从顶点 <span class="hl2">A</span> 出发，回答下列问题：</p>
+
+        <svg class="tree-svg" width="420" height="240" viewBox="0 0 420 240">
+          <defs>
+            <marker id="arrow3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+            </marker>
+          </defs>
+          <!-- A(100,50) -> B(250,50) weight 4 -->
+          <line class="tree-edge" x1="100" y1="50" x2="250" y2="50" marker-end="url(#arrow3)"/>
+          <text x="175" y="42" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">4</text>
+
+          <!-- A(100,50) -> D(100,170) weight 2 -->
+          <line class="tree-edge" x1="100" y1="50" x2="100" y2="170" marker-end="url(#arrow3)"/>
+          <text x="88" y="110" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">2</text>
+
+          <!-- B(250,50) -> C(400,50) weight 1 -->
+          <line class="tree-edge" x1="250" y1="50" x2="400" y2="50" marker-end="url(#arrow3)"/>
+          <text x="325" y="42" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">1</text>
+
+          <!-- B(250,50) -> E(250,170) weight 5 -->
+          <line class="tree-edge" x1="250" y1="50" x2="250" y2="170" marker-end="url(#arrow3)"/>
+          <text x="262" y="110" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">5</text>
+
+          <!-- C(400,50) -> E(400,170) weight 3 -->
+          <line class="tree-edge" x1="400" y1="50" x2="400" y2="170" marker-end="url(#arrow3)"/>
+          <text x="412" y="110" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">3</text>
+
+          <!-- D(100,170) -> B(250,50) weight 1 -->
+          <line class="tree-edge" x1="100" y1="170" x2="250" y2="50" marker-end="url(#arrow3)"/>
+          <text x="140" y="120" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">1</text>
+
+          <!-- D(100,170) -> E(250,170) weight 4 -->
+          <line class="tree-edge" x1="100" y1="170" x2="250" y2="170" marker-end="url(#arrow3)"/>
+          <text x="155" y="162" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">4</text>
+
+          <!-- E(250,170) -> C(400,50) weight 2 -->
+          <line class="tree-edge" x1="250" y1="170" x2="400" y2="50" marker-end="url(#arrow3)"/>
+          <text x="280" y="120" fill="var(--warn)" font-size="13" font-weight="600" text-anchor="middle">2</text>
+
+          <!-- nodes -->
+          <g class="tree-node" transform="translate(100,50)"><circle r="24"/><text>A</text></g>
+          <g class="tree-node" transform="translate(250,50)"><circle r="24"/><text>B</text></g>
+          <g class="tree-node" transform="translate(400,50)"><circle r="24"/><text>C</text></g>
+          <g class="tree-node" transform="translate(100,170)"><circle r="24"/><text>D</text></g>
+          <g class="tree-node" transform="translate(250,170)"><circle r="24"/><text>E</text></g>
+        </svg>
+
+        <ol style="margin-top:16px;">
+          <li>写出该图的 <span class="hl">Bellman-Ford</span> 每一轮松弛后 <code>dist</code> 数组的变化（假设所有边按字母顺序处理）</li>
+          <li>写出该图的 <span class="hl2">Dijkstra</span> 每一步选中的顶点及 <code>dist</code> 数组变化</li>
+          <li>Dijkstra 要求边权非负，Bellman-Ford 无此限制。请结合两种算法的<span class="hl">核心思想</span>（贪心选择 vs 逐轮松弛），解释为什么这一前提差异会导致它们对负权边的处理能力不同？</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-container -->
+
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 0%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total"></span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+})();
+</script>
+
+</body>
+</html>

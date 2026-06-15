@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图（Graph）数据结构 — 第二章：图的存储结构</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0f172a;
+    --bg-slide: #1e293b;
+    --bg-card: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #e2e8f0;
+    --success: #4ade80;
+    --warn: #fbbf24;
+    --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+  }
+
+  /* ===== Slide Container ===== */
+  #slides-container {
+    position: relative;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px 140px 80px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  /* ===== Slide Content Card ===== */
+  .slide-card {
+    background: var(--bg-slide);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 220px);
+    padding: 40px 50px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ===== Typography ===== */
+  .slide-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 36px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+
+  .slide-subtitle {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .slide-body {
+    font-size: 1.35rem;
+    line-height: 1.9;
+    color: var(--text-bright);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== Lists ===== */
+  .slide-body ul, .slide-body ol {
+    margin-left: 28px;
+    margin-bottom: 16px;
+  }
+
+  .slide-body li {
+    margin-bottom: 12px;
+  }
+
+  .slide-body li::marker {
+    color: var(--accent);
+  }
+
+  /* ===== Highlight ===== */
+  .hl {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .hl2 {
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+
+  /* ===== Code / Mono ===== */
+  code, .mono {
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: var(--accent);
+  }
+
+  .code-block {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 28px;
+    margin: 16px 0;
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--text-bright);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1.2rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    text-align: left;
+  }
+
+  th {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  tr:hover {
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  /* ===== Tree SVG ===== */
+  .tree-svg {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+  }
+
+  .tree-node circle {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+
+  .tree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 2.5;
+    fill: none;
+  }
+
+  .tree-node.leaf circle {
+    stroke: var(--success);
+  }
+
+  .tree-node.highlight circle {
+    stroke: var(--warn);
+    stroke-width: 3.5;
+    fill: rgba(251, 191, 36, 0.15);
+  }
+
+  /* ===== Two Column Layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .col-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+  }
+
+  /* ===== Tip / Note Box ===== */
+  .tip-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+    font-size: 1.15rem;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ===== Answer Box ===== */
+  .answer-box {
+    background: rgba(74, 222, 128, 0.08);
+    border-left: 4px solid var(--success);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 12px 0;
+  }
+
+  /* ===== Controls ===== */
+  #controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+    padding: 0 40px;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+
+  .ctrl-btn svg {
+    width: 18px; height: 18px;
+    fill: currentColor;
+  }
+
+  #page-indicator {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #page-indicator .current {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  /* ===== Progress Bar ===== */
+  #progress-bar {
+    position: fixed;
+    bottom: 80px; left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Key hint ===== */
+  .key-hint {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    z-index: 90;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1100px) {
+    .slide { padding: 40px 30px 140px 30px; }
+    .slide-card { padding: 30px 36px; }
+    .slide-title { font-size: 2.2rem; }
+    .slide-body { font-size: 1.15rem; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 20px 16px 140px 16px; }
+    .slide-card { padding: 20px 22px; }
+    .slide-title { font-size: 1.7rem; margin-bottom: 20px; }
+    .slide-body { font-size: 1rem; }
+    .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; }
+    table { font-size: 0.95rem; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== SLIDES ======================== -->
+<div id="slides-container">
+
+<!-- ===== Slide 0: 标题页 ===== -->
+<div class="slide" data-index="0">
+  <div class="slide-card" style="justify-content:center;align-items:center;text-align:center;">
+    <div class="slide-title" style="font-size:3.2rem;margin-bottom:16px;">第二章 图的存储结构</div>
+    <div style="font-size:1.8rem;color:var(--accent2);margin-bottom:40px;font-weight:500;">Adjacency Matrix · Adjacency List</div>
+
+    <svg class="tree-svg" width="520" height="300" viewBox="0 0 520 300">
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+        </marker>
+      </defs>
+      <!-- edges with weights -->
+      <!-- A(250,50) -> B(120,140) weight 2 -->
+      <line class="tree-edge" x1="250" y1="50" x2="120" y2="140" marker-end="url(#arrow)"/>
+      <text x="175" y="85" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">2</text>
+
+      <!-- A(250,50) -> C(380,140) weight 4 -->
+      <line class="tree-edge" x1="250" y1="50" x2="380" y2="140" marker-end="url(#arrow)"/>
+      <text x="325" y="85" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">4</text>
+
+      <!-- B(120,140) -> C(380,140) weight 1 -->
+      <line class="tree-edge" x1="120" y1="140" x2="380" y2="140" marker-end="url(#arrow)"/>
+      <text x="250" y="125" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">1</text>
+
+      <!-- B(120,140) -> D(250,220) weight 7 -->
+      <line class="tree-edge" x1="120" y1="140" x2="250" y2="220" marker-end="url(#arrow)"/>
+      <text x="175" y="190" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">7</text>
+
+      <!-- C(380,140) -> E(380,240) weight 3 -->
+      <line class="tree-edge" x1="380" y1="140" x2="380" y2="240" marker-end="url(#arrow)"/>
+      <text x="395" y="190" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">3</text>
+
+      <!-- D(250,220) -> E(380,240) weight 2 -->
+      <line class="tree-edge" x1="250" y1="220" x2="380" y2="240" marker-end="url(#arrow)"/>
+      <text x="315" y="225" fill="var(--warn)" font-size="14" font-weight="600" text-anchor="middle">2</text>
+
+      <!-- nodes -->
+      <g class="tree-node" transform="translate(250,50)"><circle r="28"/><text>A</text></g>
+      <g class="tree-node" transform="translate(120,140)"><circle r="28"/><text>B</text></g>
+      <g class="tree-node" transform="translate(380,140)"><circle r="28"/><text>C</text></g>
+      <g class="tree-node" transform="translate(250,220)"><circle r="28"/><text>D</text></g>
+      <g class="tree-node" transform="translate(380,240)"><circle r="28"/><text>E</text></g>
+    </svg>
+
+    <div style="font-size:1.2rem;color:var(--text-dim);margin-top:24px;letter-spacing:2px;">
+      邻接矩阵 · 邻接表
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 1: 邻接矩阵 Adjacency Matrix ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">邻接矩阵 Adjacency Matrix</div>
+    <div class="slide-subtitle">用二维数组存图</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div>
+          <ul>
+            <li><span class="hl">定义：</span><code>graph[i][j]</code> 表示顶点 i 到 j 的边信息（0/1 或权值）</li>
+            <li><span class="hl">无向图：</span>矩阵对称，可只存上三角</li>
+            <li><span class="hl">空间复杂度：</span><span class="hl2">O(V²)</span>，适合稠密图</li>
+            <li><span class="hl">查边：</span>查询两点是否有边 <span class="hl-success">O(1)</span></li>
+          </ul>
+          <div class="tip-box">
+            <strong>💡 提示：</strong>若边不存在通常用 <span class="hl">∞</span> 或 <span class="hl">0</span> 表示，根据题目约定
+          </div>
+        </div>
+        <div class="col-card">
+          <p style="text-align:center;color:var(--accent);font-weight:600;margin-bottom:12px;">示例图的邻接矩阵</p>
+          <table style="font-size:1.05rem;">
+            <tr>
+              <th style="text-align:center;"></th><th style="text-align:center;">A</th><th style="text-align:center;">B</th><th style="text-align:center;">C</th><th style="text-align:center;">D</th><th style="text-align:center;">E</th>
+            </tr>
+            <tr>
+              <th style="text-align:center;">A</th>
+              <td style="text-align:center;">0</td><td style="text-align:center;"><span class="hl">2</span></td><td style="text-align:center;"><span class="hl2">4</span></td><td style="text-align:center;">∞</td><td style="text-align:center;">∞</td>
+            </tr>
+            <tr>
+              <th style="text-align:center;">B</th>
+              <td style="text-align:center;">∞</td><td style="text-align:center;">0</td><td style="text-align:center;"><span class="hl">1</span></td><td style="text-align:center;"><span class="hl2">7</span></td><td style="text-align:center;">∞</td>
+            </tr>
+            <tr>
+              <th style="text-align:center;">C</th>
+              <td style="text-align:center;">∞</td><td style="text-align:center;">∞</td><td style="text-align:center;">0</td><td style="text-align:center;">∞</td><td style="text-align:center;"><span class="hl">3</span></td>
+            </tr>
+            <tr>
+              <th style="text-align:center;">D</th>
+              <td style="text-align:center;">∞</td><td style="text-align:center;">∞</td><td style="text-align:center;">∞</td><td style="text-align:center;">0</td><td style="text-align:center;"><span class="hl2">2</span></td>
+            </tr>
+            <tr>
+              <th style="text-align:center;">E</th>
+              <td style="text-align:center;">∞</td><td style="text-align:center;">∞</td><td style="text-align:center;">∞</td><td style="text-align:center;">∞</td><td style="text-align:center;">0</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="code-block"># Python 邻接矩阵（带权图）
+INF = float('inf')
+V = 5  # 顶点数
+
+# 初始化：对角线为 0，其余为 INF
+graph = [[0 if i == j else INF for j in range(V)] for i in range(V)]
+
+# 批量添加边
+edges = [
+    (0, 1, 2),  # A -> B (2)
+    (0, 2, 4),  # A -> C (4)
+    (1, 2, 1),  # B -> C (1)
+    (1, 3, 7),  # B -> D (7)
+    (2, 4, 3),  # C -> E (3)
+    (3, 4, 2),  # D -> E (2)
+]
+for u, v, w in edges:
+    graph[u][v] = w</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 2: 邻接表 Adjacency List ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">邻接表 Adjacency List</div>
+    <div class="slide-subtitle">为每个顶点维护一个邻居列表</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div>
+          <ul>
+            <li><span class="hl">定义：</span>为每个顶点维护一个列表，存储其邻接顶点</li>
+            <li><span class="hl">空间复杂度：</span><span class="hl2">O(V + E)</span>，适合稀疏图</li>
+            <li><span class="hl">查询邻居：</span>遍历某顶点的所有邻居 <span class="hl-success">O(degree)</span></li>
+            <li><span class="hl">工程首选：</span>绝大多数实际场景使用邻接表</li>
+          </ul>
+          <div class="tip-box">
+            <strong>💡 提示：</strong>绝大多数工程 / 竞赛场景都用邻接表，空间效率高且实现简单
+          </div>
+        </div>
+        <div class="col-card">
+          <p style="text-align:center;color:var(--accent);font-weight:600;margin-bottom:16px;">示例图的邻接表</p>
+          <div style="font-family:'Fira Code','Cascadia Code',Consolas,monospace;font-size:1.15rem;line-height:2.2;color:var(--text-bright);">
+            <div>A → <span class="hl">(B, 2)</span> → <span class="hl2">(C, 4)</span></div>
+            <div>B → <span class="hl">(C, 1)</span> → <span class="hl2">(D, 7)</span></div>
+            <div>C → <span class="hl">(E, 3)</span></div>
+            <div>D → <span class="hl2">(E, 2)</span></div>
+            <div>E → <span style="color:var(--text-dim)">∅</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="slide-subtitle" style="font-size:1.3rem;">有向图 vs 无向图</div>
+        <div class="two-col" style="margin-top:12px;">
+          <div class="col-card">
+            <p style="color:var(--accent);font-weight:600;margin-bottom:10px;">🔹 有向图</p>
+            <p>边有方向，只添加一次：</p>
+            <div class="code-block" style="margin-top:10px;font-size:1.05rem;">graph[u].append((v, w))</div>
+            <p style="margin-top:10px;color:var(--text-dim);font-size:1.05rem;">u → v 表示只能从 u 到 v</p>
+          </div>
+          <div class="col-card">
+            <p style="color:var(--success);font-weight:600;margin-bottom:10px;">🔸 无向图</p>
+            <p>边无方向，需要添加两次：</p>
+            <div class="code-block" style="margin-top:10px;font-size:1.05rem;">graph[u].append((v, w))
+graph[v].append((u, w))</div>
+            <p style="margin-top:10px;color:var(--text-dim);font-size:1.05rem;">u ↔ v 表示双向互通</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-block"># Python 邻接表（带权图）
+from collections import defaultdict
+
+V = 5
+graph = defaultdict(list)
+
+# 批量添加有向边
+edges = [
+    (0, 1, 2),  # A -> B (2)
+    (0, 2, 4),  # A -> C (4)
+    (1, 2, 1),  # B -> C (1)
+    (1, 3, 7),  # B -> D (7)
+    (2, 4, 3),  # C -> E (3)
+    (3, 4, 2),  # D -> E (2)
+]
+for u, v, w in edges:
+    graph[u].append((v, w))</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 3: 存储方式对比 ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">存储方式对比</div>
+    <div class="slide-subtitle">两种存储方式的选择策略</div>
+    <div class="slide-body">
+      <table>
+        <tr>
+          <th>存储方式</th>
+          <th>空间</th>
+          <th>查边 (i, j)</th>
+          <th>遍历邻居</th>
+          <th>适用场景</th>
+        </tr>
+        <tr>
+          <td><span class="hl">邻接矩阵</span></td>
+          <td>O(V²)</td>
+          <td><span class="hl-success">O(1)</span></td>
+          <td>O(V)</td>
+          <td>稠密图、频繁判边</td>
+        </tr>
+        <tr>
+          <td><span class="hl2">邻接表</span></td>
+          <td>O(V + E)</td>
+          <td>O(degree)</td>
+          <td><span class="hl-success">O(degree)</span></td>
+          <td>稀疏图、遍历为主</td>
+        </tr>
+      </table>
+
+      <div class="tip-box" style="margin-top:24px;text-align:center;font-size:1.25rem;">
+        <strong>📌 判断依据：</strong>边数 E 接近 V² 选<span class="hl">矩阵</span>，否则选<span class="hl2">邻接表</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 4: 作业 ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">作业</div>
+    <div class="slide-body">
+      <div class="col-card">
+        <p>给定以下 <span class="hl">6 个顶点的无向图</span>，分别写出其<span class="hl2">邻接矩阵</span>和<span class="hl2">邻接表</span>表示：</p>
+        <svg class="tree-svg" width="300" height="200" viewBox="0 0 300 200">
+          <!-- 六边形边 -->
+          <line class="tree-edge" x1="150" y1="30" x2="240" y2="68"/>
+          <line class="tree-edge" x1="240" y1="68" x2="240" y2="132"/>
+          <line class="tree-edge" x1="240" y1="132" x2="150" y2="170"/>
+          <line class="tree-edge" x1="150" y1="170" x2="60" y2="132"/>
+          <line class="tree-edge" x1="60" y1="132" x2="60" y2="68"/>
+          <line class="tree-edge" x1="60" y1="68" x2="150" y2="30"/>
+          <!-- 交叉边 -->
+          <line class="tree-edge" x1="150" y1="30" x2="240" y2="132"/>
+          <line class="tree-edge" x1="240" y1="68" x2="60" y2="132"/>
+          <g class="tree-node" transform="translate(150,30)"><circle r="24"/><text>A</text></g>
+          <g class="tree-node" transform="translate(240,68)"><circle r="24"/><text>B</text></g>
+          <g class="tree-node" transform="translate(240,132)"><circle r="24"/><text>C</text></g>
+          <g class="tree-node" transform="translate(150,170)"><circle r="24"/><text>D</text></g>
+          <g class="tree-node" transform="translate(60,132)"><circle r="24"/><text>E</text></g>
+          <g class="tree-node" transform="translate(60,68)"><circle r="24"/><text>F</text></g>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-container -->
+
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 20%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total">5</span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+})();
+</script>
+
+</body>
+</html>

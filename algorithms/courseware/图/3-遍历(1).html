@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图（Graph）数据结构 — 第三章：图的遍历</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0f172a;
+    --bg-slide: #1e293b;
+    --bg-card: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #e2e8f0;
+    --success: #4ade80;
+    --warn: #fbbf24;
+    --border: #475569;
+    --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+  }
+
+  /* ===== Slide Container ===== */
+  #slides-container {
+    position: relative;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px 140px 80px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  /* ===== Slide Content Card ===== */
+  .slide-card {
+    background: var(--bg-slide);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 220px);
+    padding: 40px 50px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-card::-webkit-scrollbar { width: 8px; }
+  .slide-card::-webkit-scrollbar-track { background: transparent; }
+  .slide-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ===== Typography ===== */
+  .slide-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 36px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+
+  .slide-subtitle {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .slide-body {
+    font-size: 1.35rem;
+    line-height: 1.9;
+    color: var(--text-bright);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== Lists ===== */
+  .slide-body ul, .slide-body ol {
+    margin-left: 28px;
+    margin-bottom: 16px;
+  }
+
+  .slide-body li {
+    margin-bottom: 12px;
+  }
+
+  .slide-body li::marker {
+    color: var(--accent);
+  }
+
+  /* ===== Highlight ===== */
+  .hl {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .hl2 {
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warn { color: var(--warn); font-weight: 600; }
+
+  /* ===== Code / Mono ===== */
+  code, .mono {
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: var(--accent);
+  }
+
+  .code-block {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 28px;
+    margin: 16px 0;
+    font-family: "Fira Code", "Cascadia Code", "Source Code Pro", Consolas, monospace;
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--text-bright);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1.2rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    text-align: left;
+  }
+
+  th {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  tr:hover {
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  /* ===== Tree SVG ===== */
+  .tree-svg {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+  }
+
+  .tree-node circle {
+    fill: var(--bg-card);
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+
+  .tree-node text {
+    fill: var(--text-main);
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 2.5;
+    fill: none;
+  }
+
+  .tree-node.leaf circle {
+    stroke: var(--success);
+  }
+
+  .tree-node.highlight circle {
+    stroke: var(--warn);
+    stroke-width: 3.5;
+    fill: rgba(251, 191, 36, 0.15);
+  }
+
+/* ===== Graph Viz Animation ===== */
+.graph-viz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+
+.graph-svg {
+  max-width: 320px;
+  width: 100%;
+}
+
+.graph-node circle {
+  fill: var(--bg-card);
+  stroke: var(--border);
+  stroke-width: 2.5;
+  transition: all 0.4s ease;
+}
+
+.graph-node text {
+  fill: var(--text-main);
+  font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+  font-size: 16px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+  transition: all 0.4s ease;
+}
+
+.graph-edge {
+  stroke: var(--border);
+  stroke-width: 2.5;
+  fill: none;
+  transition: all 0.4s ease;
+}
+
+.graph-node.node-current circle {
+  stroke: var(--warn);
+  stroke-width: 3.5;
+  fill: rgba(251, 191, 36, 0.2);
+}
+
+.graph-node.node-current text {
+  fill: var(--warn);
+}
+
+.graph-node.node-visited circle {
+  stroke: var(--success);
+  stroke-width: 3;
+  fill: rgba(74, 222, 128, 0.15);
+}
+
+.graph-node.node-visited text {
+  fill: var(--success);
+}
+
+.graph-edge.edge-traversed {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+}
+
+.viz-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.viz-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viz-legend .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.viz-status {
+  width: 100%;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+}
+
+.viz-status-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.viz-status-row span {
+  color: var(--text-dim);
+}
+
+.viz-status-row b {
+  color: var(--text-bright);
+  font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+}
+
+.viz-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.viz-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.viz-btn:hover {
+  background: var(--accent);
+  color: var(--bg-deep);
+  border-color: var(--accent);
+}
+
+.viz-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--bg-card);
+  color: var(--text-dim);
+}
+
+.viz-btn select {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+@media (max-width: 1100px) {
+  .viz-status-row { flex-direction: column; gap: 4px; }
+}
+
+  /* ===== Two Column Layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .col-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+  }
+
+  /* ===== Tip / Note Box ===== */
+  .tip-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+    font-size: 1.15rem;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ===== Answer Box ===== */
+  .answer-box {
+    background: rgba(74, 222, 128, 0.08);
+    border-left: 4px solid var(--success);
+    padding: 16px 22px;
+    border-radius: 0 12px 12px 0;
+    margin: 12px 0;
+  }
+
+  /* ===== Controls ===== */
+  #controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+    padding: 0 40px;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+
+  .ctrl-btn svg {
+    width: 18px; height: 18px;
+    fill: currentColor;
+  }
+
+  #page-indicator {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #page-indicator .current {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  /* ===== Progress Bar ===== */
+  #progress-bar {
+    position: fixed;
+    bottom: 80px; left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Key hint ===== */
+  .key-hint {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    z-index: 90;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1100px) {
+    .slide { padding: 40px 30px 140px 30px; }
+    .slide-card { padding: 30px 36px; }
+    .slide-title { font-size: 2.2rem; }
+    .slide-body { font-size: 1.15rem; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 20px 16px 140px 16px; }
+    .slide-card { padding: 20px 22px; }
+    .slide-title { font-size: 1.7rem; margin-bottom: 20px; }
+    .slide-body { font-size: 1rem; }
+    .ctrl-btn { padding: 8px 14px; font-size: 0.9rem; }
+    table { font-size: 0.95rem; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== SLIDES ======================== -->
+<div id="slides-container">
+
+<!-- ===== Slide 0: 标题页 ===== -->
+<div class="slide" data-index="0">
+  <div class="slide-card" style="justify-content:center;align-items:center;text-align:center;">
+    <div class="slide-title" style="font-size:3.2rem;margin-bottom:16px;">第三章 图的遍历</div>
+    <div style="font-size:1.8rem;color:var(--accent2);margin-bottom:40px;font-weight:500;">Depth-First Search · Breadth-First Search</div>
+
+    <svg class="tree-svg" width="520" height="300" viewBox="0 0 520 300">
+      <defs>
+        <marker id="arrow0" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+        </marker>
+      </defs>
+      <!-- A(250,50) -> B(120,140) -->
+      <line class="tree-edge" x1="250" y1="50" x2="120" y2="140" marker-end="url(#arrow0)"/>
+      <!-- A(250,50) -> C(380,140) -->
+      <line class="tree-edge" x1="250" y1="50" x2="380" y2="140" marker-end="url(#arrow0)"/>
+      <!-- B(120,140) -> D(120,240) -->
+      <line class="tree-edge" x1="120" y1="140" x2="120" y2="240" marker-end="url(#arrow0)"/>
+      <!-- C(380,140) -> D(120,240) -->
+      <line class="tree-edge" x1="380" y1="140" x2="120" y2="240" marker-end="url(#arrow0)"/>
+      <!-- C(380,140) -> E(380,240) -->
+      <line class="tree-edge" x1="380" y1="140" x2="380" y2="240" marker-end="url(#arrow0)"/>
+      <!-- D(120,240) -> E(380,240) -->
+      <line class="tree-edge" x1="120" y1="240" x2="380" y2="240" marker-end="url(#arrow0)"/>
+
+      <!-- nodes -->
+      <g class="tree-node" transform="translate(250,50)"><circle r="28"/><text>A</text></g>
+      <g class="tree-node" transform="translate(120,140)"><circle r="28"/><text>B</text></g>
+      <g class="tree-node" transform="translate(380,140)"><circle r="28"/><text>C</text></g>
+      <g class="tree-node" transform="translate(120,240)"><circle r="28"/><text>D</text></g>
+      <g class="tree-node" transform="translate(380,240)"><circle r="28"/><text>E</text></g>
+    </svg>
+
+    <div style="font-size:1.2rem;color:var(--text-dim);margin-top:24px;letter-spacing:2px;">
+      DFS · BFS · 访问标记 · 连通分量
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 1: 为什么需要 visited 数组？ ===== -->
+<div class="slide" data-index="1">
+  <div class="slide-card">
+    <div class="slide-title">为什么需要 visited 数组？</div>
+    <div class="slide-body">
+      <div class="two-col">
+        <div class="col-card">
+          <p style="margin-bottom:16px;"><span class="hl">树遍历</span>中，每个结点只有一个父结点，从根向下走<span class="hl-success">不会重复访问</span>。</p>
+          <p style="margin-bottom:16px;"><span class="hl2">图遍历</span>中，顶点之间可能存在<span class="hl-warn">环</span>，也可能通过<span class="hl-warn">多条路径</span>到达同一个顶点。</p>
+          <p style="margin-bottom:16px;">如果不标记已访问，搜索会在环中<span class="hl-warn">无限循环</span>，或者在同一个顶点上做大量<span class="hl-warn">重复工作</span>。</p>
+          <p><span class="hl">结论：</span>图遍历必须引入 <code>visited[]</code> 数组（或哈希集合）来记录每个顶点的访问状态。</p>
+        </div>
+        <div style="text-align:center;">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:12px;">3 顶点环：A → B → C → A</p>
+          <svg class="tree-svg" width="260" height="220" viewBox="0 0 260 220">
+            <defs>
+              <marker id="arrow1" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="var(--accent)" />
+              </marker>
+            </defs>
+            <!-- A(130,40) -> B(60,140) -->
+            <line class="tree-edge" x1="130" y1="40" x2="60" y2="140" marker-end="url(#arrow1)"/>
+            <!-- B(60,140) -> C(200,140) -->
+            <line class="tree-edge" x1="60" y1="140" x2="200" y2="140" marker-end="url(#arrow1)"/>
+            <!-- C(200,140) -> A(130,40) -->
+            <line class="tree-edge" x1="200" y1="140" x2="130" y2="40" marker-end="url(#arrow1)"/>
+
+            <!-- 无标记时循环示意 -->
+            <text x="130" y="200" text-anchor="middle" fill="var(--warn)" font-size="14" font-weight="600">不标记 → 死循环 ♻️</text>
+
+            <g class="tree-node" transform="translate(130,40)"><circle r="26"/><text>A</text></g>
+            <g class="tree-node" transform="translate(60,140)"><circle r="26"/><text>B</text></g>
+            <g class="tree-node" transform="translate(200,140)"><circle r="26"/><text>C</text></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:24px;text-align:center;font-size:1.25rem;">
+        <strong>💡 核心公式：</strong>图遍历 = 树遍历 + <span class="hl">visited</span> 标记
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 2: DFS 深度优先搜索 ===== -->
+<div class="slide" data-index="2">
+  <div class="slide-card">
+    <div class="slide-title">DFS 深度优先搜索</div>
+    <div class="slide-subtitle">从起点出发，一路走到底，回溯再探索</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:stretch;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <ul style="font-size:1.1rem;line-height:1.7;margin-bottom:0;">
+            <li><span class="hl">核心思想：</span>从起点出发，沿着一条路径尽可能深入，走到尽头后<span class="hl2">回溯</span>，再探索其他分支</li>
+            <li><span class="hl">实现方式：</span>天然适合<span class="hl2">递归</span>；也可用显式栈模拟</li>
+            <li><span class="hl">关键步骤：</span>访问顶点 → 标记 visited → 递归访问所有未访问邻居</li>
+          </ul>
+
+          <div class="graph-viz" id="dfs-viz">
+            <svg class="graph-svg" viewBox="0 0 300 230" id="dfs-svg">
+              <line class="graph-edge" id="dfs-edge-AB" x1="150" y1="40" x2="60" y2="110"/>
+              <line class="graph-edge" id="dfs-edge-AC" x1="150" y1="40" x2="240" y2="110"/>
+              <line class="graph-edge" id="dfs-edge-BD" x1="60" y1="110" x2="60" y2="190"/>
+              <line class="graph-edge" id="dfs-edge-CD" x1="240" y1="110" x2="60" y2="190"/>
+              <line class="graph-edge" id="dfs-edge-CE" x1="240" y1="110" x2="240" y2="190"/>
+              <line class="graph-edge" id="dfs-edge-DE" x1="60" y1="190" x2="240" y2="190"/>
+              <g class="graph-node" id="dfs-node-A" transform="translate(150,40)"><circle r="22"/><text>A</text></g>
+              <g class="graph-node" id="dfs-node-B" transform="translate(60,110)"><circle r="22"/><text>B</text></g>
+              <g class="graph-node" id="dfs-node-C" transform="translate(240,110)"><circle r="22"/><text>C</text></g>
+              <g class="graph-node" id="dfs-node-D" transform="translate(60,190)"><circle r="22"/><text>D</text></g>
+              <g class="graph-node" id="dfs-node-E" transform="translate(240,190)"><circle r="22"/><text>E</text></g>
+            </svg>
+
+            <div class="viz-legend">
+              <span><span class="dot" style="background:var(--warn);"></span>当前</span>
+              <span><span class="dot" style="background:var(--success);"></span>已访问</span>
+              <span><span class="dot" style="background:var(--border);"></span>未访问</span>
+            </div>
+
+            <div class="viz-status">
+              <div class="viz-status-row">
+                <span>步骤: <b id="dfs-step-num">0 / 10</b></span>
+                <span>顺序: <b id="dfs-order">-</b></span>
+                <span>栈: <b id="dfs-stack">[]</b></span>
+              </div>
+              <div id="dfs-desc" style="text-align:center;color:var(--text-dim);font-size:0.9rem;margin-top:4px;">点击 ▶ 播放开始 DFS 动画</div>
+            </div>
+
+            <div class="viz-controls">
+              <button class="viz-btn" id="dfs-btn-reset">⟲ 重置</button>
+              <button class="viz-btn" id="dfs-btn-prev">⏴ 上一步</button>
+              <button class="viz-btn" id="dfs-btn-play">▶ 播放</button>
+              <button class="viz-btn" id="dfs-btn-next">⏵ 下一步</button>
+              <select class="viz-btn" id="dfs-speed">
+                <option value="2000">慢</option>
+                <option value="1000" selected>中</option>
+                <option value="400">快</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-card">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:12px;text-align:center;">递归实现（Python）</p>
+          <div class="code-block" style="margin:0;">def dfs(u):
+    visited[u] = True
+    for v, w in graph[u]:  # w 为边权，遍历时不需要
+        if not visited[v]:
+            dfs(v)</div>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:24px;text-align:center;font-size:1.25rem;">
+        <strong>⏱ 复杂度：</strong>时间 <span class="hl">O(V + E)</span>，空间 <span class="hl2">O(V)</span>（递归栈 / 显式栈 + visited 数组）
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 3: BFS 广度优先搜索 ===== -->
+<div class="slide" data-index="3">
+  <div class="slide-card">
+    <div class="slide-title">BFS 广度优先搜索</div>
+    <div class="slide-subtitle">层层推进，先访问所有邻居，再访问邻居的邻居</div>
+    <div class="slide-body">
+      <div class="two-col" style="align-items:stretch;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <ul style="font-size:1.1rem;line-height:1.7;margin-bottom:0;">
+            <li><span class="hl">核心思想：</span>从起点出发，先访问所有直接邻居，再依次访问邻居的邻居，层层向外推进</li>
+            <li><span class="hl">数据结构：</span>使用队列（Queue）维护待访问顶点</li>
+            <li><span class="hl">独特优势：</span>在无权图中，BFS 第一次到达某顶点的路径就是边数最少的最短路径</li>
+          </ul>
+
+          <div class="graph-viz" id="bfs-viz">
+            <svg class="graph-svg" viewBox="0 0 300 230" id="bfs-svg">
+              <line class="graph-edge" id="bfs-edge-AB" x1="150" y1="40" x2="60" y2="110"/>
+              <line class="graph-edge" id="bfs-edge-AC" x1="150" y1="40" x2="240" y2="110"/>
+              <line class="graph-edge" id="bfs-edge-BD" x1="60" y1="110" x2="60" y2="190"/>
+              <line class="graph-edge" id="bfs-edge-CD" x1="240" y1="110" x2="60" y2="190"/>
+              <line class="graph-edge" id="bfs-edge-CE" x1="240" y1="110" x2="240" y2="190"/>
+              <line class="graph-edge" id="bfs-edge-DE" x1="60" y1="190" x2="240" y2="190"/>
+              <g class="graph-node" id="bfs-node-A" transform="translate(150,40)"><circle r="22"/><text>A</text></g>
+              <g class="graph-node" id="bfs-node-B" transform="translate(60,110)"><circle r="22"/><text>B</text></g>
+              <g class="graph-node" id="bfs-node-C" transform="translate(240,110)"><circle r="22"/><text>C</text></g>
+              <g class="graph-node" id="bfs-node-D" transform="translate(60,190)"><circle r="22"/><text>D</text></g>
+              <g class="graph-node" id="bfs-node-E" transform="translate(240,190)"><circle r="22"/><text>E</text></g>
+            </svg>
+
+            <div class="viz-legend">
+              <span><span class="dot" style="background:var(--warn);"></span>当前</span>
+              <span><span class="dot" style="background:var(--success);"></span>已访问</span>
+              <span><span class="dot" style="background:var(--border);"></span>未访问</span>
+            </div>
+
+            <div class="viz-status">
+              <div class="viz-status-row">
+                <span>步骤: <b id="bfs-step-num">0 / 10</b></span>
+                <span>顺序: <b id="bfs-order">-</b></span>
+                <span>队列: <b id="bfs-queue">[]</b></span>
+              </div>
+              <div id="bfs-desc" style="text-align:center;color:var(--text-dim);font-size:0.9rem;margin-top:4px;">点击 ▶ 播放开始 BFS 动画</div>
+            </div>
+
+            <div class="viz-controls">
+              <button class="viz-btn" id="bfs-btn-reset">⟲ 重置</button>
+              <button class="viz-btn" id="bfs-btn-prev">⏴ 上一步</button>
+              <button class="viz-btn" id="bfs-btn-play">▶ 播放</button>
+              <button class="viz-btn" id="bfs-btn-next">⏵ 下一步</button>
+              <select class="viz-btn" id="bfs-speed">
+                <option value="2000">慢</option>
+                <option value="1000" selected>中</option>
+                <option value="400">快</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-card">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:12px;text-align:center;">队列实现（Python）</p>
+          <div class="code-block" style="margin:0;">from collections import deque
+
+q = deque()
+q.append(start)
+visited[start] = True
+while q:
+    u = q.popleft()
+    for v, w in graph[u]:
+        if not visited[v]:
+            visited[v] = True
+            q.append(v)
+            # dist[v] = dist[u] + 1  # 如需最短路径，可记录距离</div>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:24px;text-align:center;font-size:1.25rem;">
+        <strong>⏱ 复杂度：</strong>时间 <span class="hl">O(V + E)</span>，空间 <span class="hl2">O(V)</span>（队列 + visited 数组）· 可求<span class="hl-success">无权图最短路径</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 4: DFS vs BFS 对比 ===== -->
+<div class="slide" data-index="4">
+  <div class="slide-card">
+    <div class="slide-title">DFS vs BFS</div>
+    <div class="slide-body">
+      <table>
+        <tr><th>特性</th><th>DFS</th><th>BFS</th></tr>
+        <tr><td><span class="hl">数据结构</span></td><td>栈（递归 / 显式栈）</td><td>队列</td></tr>
+        <tr><td><span class="hl">搜索顺序</span></td><td>一路到底，回溯</td><td>层层推进</td></tr>
+        <tr><td><span class="hl">适用场景</span></td><td>连通分量、判环、回溯</td><td>无权图最短路径、层序遍历</td></tr>
+        <tr><td><span class="hl">空间（最坏）</span></td><td><span class="hl-success">O(V)</span></td><td><span class="hl-success">O(V)</span></td></tr>
+      </table>
+
+      <div class="two-col" style="margin-top:24px;">
+        <div class="col-card">
+          <p style="color:var(--accent);font-weight:600;margin-bottom:10px;font-size:1.3rem;">🧭 DFS 类比</p>
+          <p>走迷宫时<span class="hl">一条路走到底</span>，遇到死胡同再退回岔路口，选择另一条路继续。</p>
+        </div>
+        <div class="col-card">
+          <p style="color:var(--accent2);font-weight:600;margin-bottom:10px;font-size:1.3rem;">🌊 BFS 类比</p>
+          <p>像<span class="hl2">水波纹扩散</span>一样，从起点向四周均匀推进，先近后远，层层覆盖。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 5: 图遍历 vs 树遍历 ⭐ ===== -->
+<div class="slide" data-index="5">
+  <div class="slide-card">
+    <div class="slide-title">图遍历 vs 树遍历 ⭐</div>
+    <div class="slide-body">
+      <table>
+        <tr><th>特性</th><th>树遍历</th><th>图遍历</th></tr>
+        <tr><td><span class="hl">重复访问</span></td><td>不会（无环、有向层次）</td><td>可能（有环、多条路径）</td></tr>
+        <tr><td><span class="hl">必要操作</span></td><td>无需标记</td><td>必须 <code>visited</code> 数组</td></tr>
+        <tr><td><span class="hl">DFS 递归</span></td><td>天然安全</td><td>注意栈深度（大图可能爆栈）</td></tr>
+        <tr><td><span class="hl">BFS 结果</span></td><td>层序编号</td><td>最短路径边数（无权图）</td></tr>
+      </table>
+
+      <div class="tip-box" style="margin-top:24px;text-align:center;font-size:1.25rem;">
+        <strong>🔗 知识联结：</strong>树的前序遍历 ≈ 图的 <span class="hl">DFS</span>；树的层序遍历 = 图的 <span class="hl2">BFS</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Slide 6: 遍历的应用 + 作业 ===== -->
+<div class="slide" data-index="6">
+  <div class="slide-card">
+    <div class="slide-title">遍历的应用与作业</div>
+    <div class="slide-body">
+      <div class="slide-subtitle" style="font-size:1.4rem;">常见应用</div>
+      <ol>
+        <li><span class="hl">求连通分量：</span>对无向图每个未访问顶点执行一次 DFS/BFS，计数即为连通分量个数</li>
+        <li><span class="hl">判断环：</span>DFS 中若遇到已访问且不是当前递归路径父结点的顶点，则存在环（回溯边）</li>
+        <li><span class="hl">无权图最短路径：</span>BFS 第一次到达目标顶点时的层数，即为最短路径边数</li>
+      </ol>
+
+      <div class="slide-subtitle" style="font-size:1.4rem;margin-top:24px;">课后作业</div>
+      <div class="answer-box">
+        <p style="margin-bottom:12px;">给定以下 <span class="hl">无向图</span>（5 个顶点），写出从顶点 <span class="hl2">A</span> 出发的 <span class="hl">DFS</span> 和 <span class="hl2">BFS</span> 遍历序列：</p>
+        <svg class="tree-svg" width="340" height="220" viewBox="0 0 340 220">
+          <!-- A(170,40) - B(80,120) -->
+          <line class="tree-edge" x1="170" y1="40" x2="80" y2="120"/>
+          <!-- A(170,40) - C(260,120) -->
+          <line class="tree-edge" x1="170" y1="40" x2="260" y2="120"/>
+          <!-- B(80,120) - D(80,200) -->
+          <line class="tree-edge" x1="80" y1="120" x2="80" y2="200"/>
+          <!-- C(260,120) - D(80,200) -->
+          <line class="tree-edge" x1="260" y1="120" x2="80" y2="200"/>
+          <!-- C(260,120) - E(260,200) -->
+          <line class="tree-edge" x1="260" y1="120" x2="260" y2="200"/>
+          <!-- D(80,200) - E(260,200) -->
+          <line class="tree-edge" x1="80" y1="200" x2="260" y2="200"/>
+
+          <g class="tree-node" transform="translate(170,40)"><circle r="26"/><text>A</text></g>
+          <g class="tree-node" transform="translate(80,120)"><circle r="26"/><text>B</text></g>
+          <g class="tree-node" transform="translate(260,120)"><circle r="26"/><text>C</text></g>
+          <g class="tree-node" transform="translate(80,200)"><circle r="26"/><text>D</text></g>
+          <g class="tree-node" transform="translate(260,200)"><circle r="26"/><text>E</text></g>
+        </svg>
+        <p style="color:var(--text-dim);font-size:1.1rem;">提示：假设每个顶点的邻接点按字母顺序访问。 DFS 序列：__________ ； BFS 序列：__________</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-container -->
+
+<!-- ======================== CONTROLS ======================== -->
+<div id="progress-bar">
+  <div id="progress-fill" style="width: 0%;"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    上一页
+  </button>
+  <div id="page-indicator"><span class="current" id="page-current">1</span> / <span id="page-total"></span></div>
+  <button class="ctrl-btn" id="btn-next">
+    下一页
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+<p class="key-hint">← → 方向键翻页</p>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const pageCurrent = document.getElementById('page-current');
+  const pageTotal = document.getElementById('page-total');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+
+  pageTotal.textContent = total;
+
+  function update() {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i === current) {
+        slide.classList.add('active');
+      } else if (i < current) {
+        slide.classList.add('prev');
+      }
+    });
+
+    pageCurrent.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  window.goTo = function(index) {
+    if (window._dfsViz) window._dfsViz.pause();
+    if (window._bfsViz) window._bfsViz.pause();
+    if (index < 0 || index >= total) return;
+    current = index;
+    update();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const container = document.getElementById('slides-container');
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+  container.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  btnNext.addEventListener('click', function() { goTo(current + 1); });
+
+  update();
+
+/* ===== Graph Traversal Animation ===== */
+(function() {
+  const GRAPH = { A: ['B','C'], B: ['A','D'], C: ['A','D','E'], D: ['B','C','E'], E: ['C','D'] };
+  const EDGES = [['A','B'],['A','C'],['B','D'],['C','D'],['C','E'],['D','E']];
+
+  // DFS 预计算步骤（从 A 出发，邻接点按字母顺序）
+  const DFS_STEPS = [
+    { desc: "准备从顶点 A 开始 DFS", current: null, visited: [], stack: [], order: [], edges: [] },
+    { desc: "访问 A，标记已访问，压入栈", current: "A", visited: ["A"], stack: ["A"], order: ["A"], edges: [] },
+    { desc: "A 的邻居 B 未访问，前往 B", current: "B", visited: ["A","B"], stack: ["A","B"], order: ["A","B"], edges: [["A","B"]] },
+    { desc: "B 的邻居 D 未访问，前往 D", current: "D", visited: ["A","B","D"], stack: ["A","B","D"], order: ["A","B","D"], edges: [["A","B"],["B","D"]] },
+    { desc: "D 的邻居 C 未访问，前往 C", current: "C", visited: ["A","B","D","C"], stack: ["A","B","D","C"], order: ["A","B","D","C"], edges: [["A","B"],["B","D"],["D","C"]] },
+    { desc: "C 的邻居 E 未访问，前往 E", current: "E", visited: ["A","B","D","C","E"], stack: ["A","B","D","C","E"], order: ["A","B","D","C","E"], edges: [["A","B"],["B","D"],["D","C"],["C","E"]] },
+    { desc: "E 的邻居都已访问，回溯到 C", current: "C", visited: ["A","B","D","C","E"], stack: ["A","B","D","C"], order: ["A","B","D","C","E"], edges: [["A","B"],["B","D"],["D","C"],["C","E"]] },
+    { desc: "C 无未访问邻居，回溯到 D", current: "D", visited: ["A","B","D","C","E"], stack: ["A","B","D"], order: ["A","B","D","C","E"], edges: [["A","B"],["B","D"],["D","C"],["C","E"]] },
+    { desc: "D 无未访问邻居，回溯到 B", current: "B", visited: ["A","B","D","C","E"], stack: ["A","B"], order: ["A","B","D","C","E"], edges: [["A","B"],["B","D"],["D","C"],["C","E"]] },
+    { desc: "B 无未访问邻居，回溯到 A", current: "A", visited: ["A","B","D","C","E"], stack: ["A"], order: ["A","B","D","C","E"], edges: [["A","B"],["B","D"],["D","C"],["C","E"]] },
+    { desc: "A 的邻居也都已访问，DFS 完成", current: null, visited: ["A","B","D","C","E"], stack: [], order: ["A","B","D","C","E"], edges: [["A","B"],["B","D"],["D","C"],["C","E"]] }
+  ];
+
+  // BFS 预计算步骤（从 A 出发，邻接点按字母顺序）
+  const BFS_STEPS = [
+    { desc: "准备从顶点 A 开始 BFS", current: null, visited: [], queue: [], order: [], edges: [] },
+    { desc: "访问 A，标记已访问，A 入队", current: "A", visited: ["A"], queue: ["A"], order: ["A"], edges: [] },
+    { desc: "A 出队，处理邻居 B、C 并入队", current: "A", visited: ["A","B","C"], queue: ["B","C"], order: ["A","B","C"], edges: [["A","B"],["A","C"]] },
+    { desc: "B 出队，处理邻居 D 并入队", current: "B", visited: ["A","B","C","D"], queue: ["C","D"], order: ["A","B","C","D"], edges: [["A","B"],["A","C"],["B","D"]] },
+    { desc: "C 出队，处理邻居 E 并入队", current: "C", visited: ["A","B","C","D","E"], queue: ["D","E"], order: ["A","B","C","D","E"], edges: [["A","B"],["A","C"],["B","D"],["C","E"]] },
+    { desc: "D 出队，无新邻居可入队", current: "D", visited: ["A","B","C","D","E"], queue: ["E"], order: ["A","B","C","D","E"], edges: [["A","B"],["A","C"],["B","D"],["C","E"]] },
+    { desc: "E 出队，无新邻居可入队", current: "E", visited: ["A","B","C","D","E"], queue: [], order: ["A","B","C","D","E"], edges: [["A","B"],["A","C"],["B","D"],["C","E"]] },
+    { desc: "队列为空，BFS 遍历完成", current: null, visited: ["A","B","C","D","E"], queue: [], order: ["A","B","C","D","E"], edges: [["A","B"],["A","C"],["B","D"],["C","E"]] }
+  ];
+
+  class GraphViz {
+    constructor(prefix, steps, dsKey) {
+      this.prefix = prefix;
+      this.steps = steps;
+      this.dsKey = dsKey;
+      this.idx = 0;
+      this.timer = null;
+      this.speed = 1000;
+      this.init();
+    }
+
+    init() {
+      this.svg = document.getElementById(this.prefix + '-svg');
+      this.stepNum = document.getElementById(this.prefix + '-step-num');
+      this.orderEl = document.getElementById(this.prefix + '-order');
+      this.dsEl = document.getElementById(this.prefix + '-' + (this.dsKey === 'stack' ? 'stack' : 'queue'));
+      this.descEl = document.getElementById(this.prefix + '-desc');
+      this.btnPlay = document.getElementById(this.prefix + '-btn-play');
+      this.btnPrev = document.getElementById(this.prefix + '-btn-prev');
+      this.btnNext = document.getElementById(this.prefix + '-btn-next');
+      this.btnReset = document.getElementById(this.prefix + '-btn-reset');
+      this.speedSel = document.getElementById(this.prefix + '-speed');
+
+      this.btnReset.addEventListener('click', () => { this.pause(); this.goTo(0); });
+      this.btnPrev.addEventListener('click', () => { this.pause(); this.prev(); });
+      this.btnPlay.addEventListener('click', () => this.togglePlay());
+      this.btnNext.addEventListener('click', () => { this.pause(); this.next(); });
+      this.speedSel.addEventListener('change', (e) => { this.speed = parseInt(e.target.value); });
+
+      this.renderStep(0);
+    }
+
+    renderStep(index) {
+      this.idx = index;
+      const step = this.steps[index];
+
+      // 顶点状态
+      const nodes = ['A','B','C','D','E'];
+      nodes.forEach(n => {
+        const el = document.getElementById(this.prefix + '-node-' + n);
+        el.classList.remove('node-current', 'node-visited');
+        if (step.current === n) el.classList.add('node-current');
+        else if (step.visited.includes(n)) el.classList.add('node-visited');
+      });
+
+      // 边状态（无向边需双向查找）
+      EDGES.forEach(([u,v]) => {
+        const id1 = this.prefix + '-edge-' + u + v;
+        const id2 = this.prefix + '-edge-' + v + u;
+        const el = document.getElementById(id1) || document.getElementById(id2);
+        if (!el) return;
+        el.classList.remove('edge-traversed');
+        const traversed = step.edges.some(e => (e[0]===u && e[1]===v) || (e[0]===v && e[1]===u));
+        if (traversed) el.classList.add('edge-traversed');
+      });
+
+      // 文本更新
+      this.stepNum.textContent = (index + 1) + ' / ' + this.steps.length;
+      this.orderEl.textContent = step.order.length ? step.order.join(' → ') : '-';
+      const ds = step[this.dsKey];
+      this.dsEl.textContent = '[' + ds.join(', ') + ']';
+      this.descEl.textContent = step.desc;
+
+      // 按钮状态
+      this.btnPrev.disabled = index <= 0;
+      this.btnNext.disabled = index >= this.steps.length - 1;
+      this.btnPlay.textContent = this.timer ? '⏸ 暂停' : '▶ 播放';
+    }
+
+    next() {
+      if (this.idx < this.steps.length - 1) {
+        this.renderStep(this.idx + 1);
+        return true;
+      }
+      this.pause();
+      return false;
+    }
+
+    prev() {
+      if (this.idx > 0) {
+        this.renderStep(this.idx - 1);
+      }
+    }
+
+    goTo(index) {
+      if (index >= 0 && index < this.steps.length) {
+        this.renderStep(index);
+      }
+    }
+
+    play() {
+      if (this.timer) return;
+      this.btnPlay.textContent = '⏸ 暂停';
+      const tick = () => {
+        if (!this.next()) return;
+        this.timer = setTimeout(tick, this.speed);
+      };
+      this.timer = setTimeout(tick, this.speed);
+    }
+
+    pause() {
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.btnPlay.textContent = '▶ 播放';
+    }
+
+    togglePlay() {
+      if (this.timer) this.pause();
+      else this.play();
+    }
+  }
+
+  window._dfsViz = new GraphViz('dfs', DFS_STEPS, 'stack');
+  window._bfsViz = new GraphViz('bfs', BFS_STEPS, 'queue');
+})();
+})();
+</script>
+
+</body>
+</html>
